@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
 
     RecyclerView recyclerView;
     TextView noMusicTextView;
-    List<AudioModel> songsList = new ArrayList<>();
+    ArrayList<AudioModel> songsList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,16 +72,14 @@ public class MainActivity extends AppCompatActivity {
                 null,
                 MediaStore.Audio.Media.TITLE + " ASC");
 
-//        Toast.makeText(MainActivity.this,
-//                cursor.getString(0),
-//                Toast.LENGTH_LONG).show();
-
         while(cursor.moveToNext()){
             String path = cursor.getString(0);
             String title = cursor.getString(1);
+            String artist = cursor.getString(2);
+            String album = cursor.getString(3);
             String duration = cursor.getString(4);
             if (new File(path).exists()) {
-                songsList.add(new AudioModel(path, title, duration));
+                songsList.add(new AudioModel(path, title, artist, album, duration));
             }
         }
         cursor.close();

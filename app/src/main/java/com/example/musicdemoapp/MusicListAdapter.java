@@ -1,6 +1,8 @@
 package com.example.musicdemoapp;
 
 import android.content.Context;
+import android.content.Intent;
+import android.os.Parcelable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,13 +12,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.ViewHolder>{
-    private List<AudioModel> songsList;
+    private ArrayList<AudioModel> songsList;
     private Context context;
 
-    public MusicListAdapter(List<AudioModel> songsList, Context context) {
+    public MusicListAdapter(ArrayList<AudioModel> songsList, Context context) {
         this.songsList = songsList;
         this.context = context;
     }
@@ -28,7 +31,8 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(MusicListAdapter.ViewHolder holder, int position) {
+        int pos = position;
         AudioModel songData = songsList.get(position);
         holder.titleTextView.setText(songData.getTitle());
 
@@ -36,6 +40,12 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
             @Override
             public void onClick(View v){
                 //navigate to song activity
+                MyMediaPlayer.getInstance().reset();
+                MyMediaPlayer.currentIndex = pos;
+                Intent intent = new Intent(context, MusicPlayerActivity.class);
+                intent.putExtra("LIST", songsList);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
             }
         });
     }
