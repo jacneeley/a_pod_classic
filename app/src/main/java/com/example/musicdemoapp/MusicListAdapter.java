@@ -19,6 +19,8 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
     private ArrayList<AudioModel> songsList;
     private Context context;
 
+    private Intent intent;
+
     public MusicListAdapter(ArrayList<AudioModel> songsList, Context context) {
         this.songsList = songsList;
         this.context = context;
@@ -37,15 +39,22 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
         holder.titleTextView.setText(songData.getTitle());
 
         holder.itemView.setOnClickListener(new View.OnClickListener(){
+            Intent intent;
             @Override
             public void onClick(View v){
                 //navigate to song activity
-                MyMediaPlayer.getInstance().reset();
-                MyMediaPlayer.currentIndex = pos;
-                Intent intent = new Intent(context, MusicPlayerActivity.class);
-                intent.putExtra("LIST", songsList);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
+
+                if(MyMediaPlayer.currentIndex == -1 || MyMediaPlayer.currentIndex != pos){
+                    MyMediaPlayer.getInstance().reset();
+                    MyMediaPlayer.currentIndex = pos;
+                    this.intent = new Intent(context, MusicPlayerActivity.class);
+                    this.intent.putExtra("LIST", songsList);
+                    this.intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(this.intent);
+                }
+                else{
+                    context.startActivity(this.intent);
+                }
             }
         });
     }
