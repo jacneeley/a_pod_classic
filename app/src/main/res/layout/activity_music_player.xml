@@ -14,10 +14,11 @@
         android:id="@+id/album_art"
         android:layout_centerHorizontal="true"
         android:layout_above="@id/song_title"
-        android:padding="20dp" />
+        android:padding="20dp"
+        android:layout_marginBottom="30dp"/>
 
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:text="Song Title"
         android:id="@+id/song_title"
@@ -31,18 +32,30 @@
         />
 
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Song Artist"
         android:id="@+id/song_artist"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
         android:layout_above="@id/controls"
-        android:singleLine="true"
-        android:ellipsize="marquee"
-        android:textColor="@color/white"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
+        android:ellipsize="marquee"
         android:padding="10dp"
-        />
+        android:singleLine="true"
+        android:text="Song Artist"
+        android:textColor="@color/white" />
+
+
+    <ImageView
+        android:id="@+id/shuffle"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_below="@id/song_title"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="30dp"
+        android:layout_toEndOf="@id/song_artist"
+        android:src="@drawable/shuffle" />
 
     <RelativeLayout
         android:layout_width="match_parent"

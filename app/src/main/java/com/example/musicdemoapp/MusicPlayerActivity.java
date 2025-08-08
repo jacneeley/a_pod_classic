@@ -2,6 +2,7 @@ package com.example.musicdemoapp;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.MediaPlayer;
@@ -19,12 +20,14 @@ import androidx.core.view.WindowInsetsCompat;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class MusicPlayerActivity extends AppCompatActivity {
+    private Context context;
     private TextView titleTv, artistTv, currentTimeTv, totalTimeTv;
     private SeekBar seekBar;
-    private ImageView playPause, nextBtn, previousBtn, art;
+    private ImageView playPause, nextBtn, previousBtn, albumArt, shuffleBtn;
 
     private ArrayList<AudioModel> songsList;
     private AudioModel currentSong;
@@ -49,6 +52,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         artistTv = findViewById(R.id.song_artist);
         currentTimeTv = findViewById(R.id.current_time);
         totalTimeTv = findViewById(R.id.total_time);
+        shuffleBtn = findViewById(R.id.shuffle);
 
         seekBar = findViewById(R.id.seek_bar);
 
@@ -56,7 +60,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         nextBtn = findViewById(R.id.next);
         previousBtn = findViewById(R.id.previous);
 
-        art = findViewById(R.id.album_art);
+        albumArt = findViewById(R.id.album_art);
 
         titleTv.setSelected(true);
         artistTv.setSelected(true);
@@ -69,27 +73,28 @@ public class MusicPlayerActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if(mediaPlayer != null){
-                    // linter will still complain about null pointer but this will handle it.
-                    int prog = Integer.valueOf(mediaPlayer.getCurrentPosition()) != null ? mediaPlayer.getCurrentPosition() : 0;
+                    int prog = mediaPlayer.getCurrentPosition();
                     seekBar.setProgress(prog);
 
-                    int currentPos = mediaPlayer.getCurrentPosition();
-                    currentTimeTv.setText(convertToMinutesAndSeconds(String.valueOf(currentPos)));
+                    currentTimeTv.setText(convertToMinutesAndSeconds((long) prog));
+
+                    prog = prog != 0 ? prog / 1000 : 0;
+                    int total = mediaPlayer.getDuration() / 1000;
+                    String curr = MyMediaPlayer.currentlyPlaying;
+                    if(mediaPlayer.isPlaying() && total == prog && curr.equals(currentSong.getTitle())) {
+                        playNextSong();
+                        //TODO: maybe find a way to make transitions more seamless.
+                    }
 
                     if(mediaPlayer.isPlaying()){
                         playPause.setImageResource(R.drawable.baseline_pause_24);
                     }
                     else {
-                        currentPos = currentPos / 1000;
-                        int total = mediaPlayer.getDuration() / 1000;
-                        if(total == currentPos){
-                            playNextSong();
-                            //TODO: maybe find a way to make transitions more seamless.
-                        }
                         playPause.setImageResource(R.drawable.baseline_play_circle);
                     }
+
+                    new Handler().postDelayed(this, 100);
                 }
-                new Handler().postDelayed(this, 100);
             }
         });
 
@@ -113,16 +118,16 @@ public class MusicPlayerActivity extends AppCompatActivity {
 
             titleTv.setText(currentSong.getTitle());
             artistTv.setText(currentSong.getArtist().isBlank() ? "" : currentSong.getArtist());
-            totalTimeTv.setText(convertToMinutesAndSeconds(currentSong.duration));
+            totalTimeTv.setText(convertToMinutesAndSeconds(Long.parseLong(currentSong.duration)));
+
+            shuffleBtn.setOnClickListener(v -> shuffleSongs());
 
             playPause.setOnClickListener(v -> pausePlay());
             nextBtn.setOnClickListener(v -> playNextSong());
             previousBtn.setOnClickListener(v -> playPreviousSong());
 
+            playMusic();
 
-            if(!mediaPlayer.isPlaying()){
-                playMusic();
-            }
         }
         else {
             handleEmptySongList();
@@ -130,22 +135,26 @@ public class MusicPlayerActivity extends AppCompatActivity {
     }
 
     @SuppressLint("DefaultLocale") //This should not cause problems as chars are not being used.
-    private static String convertToMinutesAndSeconds(String duration){
-        long ms = Long.parseLong(duration);
+    private static String convertToMinutesAndSeconds(long duration){
         return String.format("%02d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(ms) % TimeUnit.HOURS.toMinutes(1),
-                TimeUnit.MILLISECONDS.toSeconds(ms) % TimeUnit.MINUTES.toSeconds(1)
+                TimeUnit.MILLISECONDS.toMinutes(duration) % TimeUnit.HOURS.toMinutes(1),
+                TimeUnit.MILLISECONDS.toSeconds(duration) % TimeUnit.MINUTES.toSeconds(1)
         );
     }
 
     private void playMusic(){
-        mediaPlayer.reset();
         try {
-            mediaPlayer.setDataSource(currentSong.getPath());
-            mediaPlayer.prepare();
-            mediaPlayer.start();
-            seekBar.setProgress(0);
-            seekBar.setMax(mediaPlayer.getDuration());
+            String curr = currentSong.getTitle();
+            if(!mediaPlayer.isPlaying() || !curr.equals(MyMediaPlayer.currentlyPlaying)){
+                mediaPlayer.reset();
+                mediaPlayer.setDataSource(currentSong.getPath());
+                mediaPlayer.prepare();
+                mediaPlayer.start();
+                seekBar.setProgress(0);
+                MyMediaPlayer.currentlyPlaying = currentSong.getTitle();
+            }
+
+            seekBar.setMax(Integer.parseInt(currentSong.duration));
 
         } catch (IOException e){
             e.printStackTrace();
@@ -154,25 +163,32 @@ public class MusicPlayerActivity extends AppCompatActivity {
     }
 
     private void playNextSong(){
-//        if(shuffle){
-//            //TODO: add logic for shuffle
-//        }
+        //TODO: figure out why 'Intents' break when in shuffle mode.
 
-        if(MyMediaPlayer.currentIndex != songsList.size() - 1){
-            MyMediaPlayer.currentIndex += 1;
-            mediaPlayer.reset();
-            setResourcesWithMusic();
+        if(shuffle){
+            int min = 0;
+            int max = songsList.size() - 1;
+            MyMediaPlayer.currentIndex = new Random().nextInt(max - min) + min;
         }
+
+        else if(MyMediaPlayer.currentIndex != songsList.size() - 1){
+            MyMediaPlayer.currentIndex += 1;
+        }
+
+        mediaPlayer.reset();
+        setResourcesWithMusic();
+        //null exception occurs when playNextSong plays the next song and user clicks on a new song, context is null.
+        //updateIntent();
     }
 
     private void playPreviousSong(){
-        if(MyMediaPlayer.currentIndex != 0){
+        long prog = TimeUnit.MILLISECONDS.toSeconds(mediaPlayer.getCurrentPosition());
+        if((prog) < 5 && MyMediaPlayer.currentIndex != 0){
             MyMediaPlayer.currentIndex -= 1;
-            mediaPlayer.reset();
-            setResourcesWithMusic();
         }
-        /*TODO: if song is not finished then restart
-        /* maybe something like if current duration > 0:05 restart */
+
+        mediaPlayer.reset();
+        setResourcesWithMusic();
     }
 
     private void pausePlay(){
@@ -182,6 +198,16 @@ public class MusicPlayerActivity extends AppCompatActivity {
         else{
             mediaPlayer.start();
         }
+    }
+
+    private void shuffleSongs(){
+        shuffle = !shuffle;
+    }
+
+    private void updateIntent(){
+        Intent intent = new Intent(context, MusicPlayerActivity.class);
+        intent.putExtra("LIST", songsList);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
     }
 
     private void handleEmptySongList(){

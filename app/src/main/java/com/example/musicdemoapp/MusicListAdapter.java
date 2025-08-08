@@ -39,21 +39,31 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
         holder.titleTextView.setText(songData.getTitle());
 
         holder.itemView.setOnClickListener(new View.OnClickListener(){
-            Intent intent;
+            Intent intent = getIntent();
             @Override
             public void onClick(View v){
                 //navigate to song activity
+                try{
+                    if(MyMediaPlayer.currentIndex == -1 || MyMediaPlayer.currentIndex != pos){
+                        MyMediaPlayer.getInstance().reset();
+                        MyMediaPlayer.currentIndex = pos;
+                        this.intent = new Intent(context, MusicPlayerActivity.class);
+                        this.intent.putExtra("LIST", songsList);
+                        this.intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    }
 
-                if(MyMediaPlayer.currentIndex == -1 || MyMediaPlayer.currentIndex != pos){
-                    MyMediaPlayer.getInstance().reset();
-                    MyMediaPlayer.currentIndex = pos;
-                    this.intent = new Intent(context, MusicPlayerActivity.class);
-                    this.intent.putExtra("LIST", songsList);
+                    if(this.intent == null){ //hotfix for now
+                        MyMediaPlayer.currentIndex = pos;
+                        this.intent = new Intent(context, MusicPlayerActivity.class);
+                        this.intent.putExtra("LIST", songsList);
+                        this.intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    }
                     this.intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     context.startActivity(this.intent);
-                }
-                else{
-                    context.startActivity(this.intent);
+
+                } catch (Exception e){
+                    e.getMessage();
+                    e.printStackTrace();
                 }
             }
         });
@@ -73,5 +83,9 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
             titleTextView = itemView.findViewById(R.id.music_title_txt);
             iconImageView = itemView.findViewById(R.id.icon_view);
         }
+    }
+
+    private Intent getIntent(){
+        return this.intent;
     }
 }

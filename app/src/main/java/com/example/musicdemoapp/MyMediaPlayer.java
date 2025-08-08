@@ -13,4 +13,5 @@ public class MyMediaPlayer {
     }
 
     public static int currentIndex = -1; //no song is playing
+    public static String currentlyPlaying;
 }
