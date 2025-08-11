@@ -69,11 +69,6 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
         });
     }
 
-    @Override
-    public int getItemCount() {
-        return songsList.size();
-    }
-
     public class ViewHolder extends RecyclerView.ViewHolder{
 
         TextView titleTextView;
@@ -83,6 +78,11 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
             titleTextView = itemView.findViewById(R.id.music_title_txt);
             iconImageView = itemView.findViewById(R.id.icon_view);
         }
+    }
+
+    @Override
+    public int getItemCount() {
+        return songsList.size();
     }
 
     private Intent getIntent(){

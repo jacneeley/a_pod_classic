@@ -47,7 +47,8 @@
 
     </androidx.cardview.widget.CardView>
 
-    <androidx.cardview.widget.CardView
+    <!-- TODO: implement these later -->
+    <!-- <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/playlists_card">
@@ -71,6 +72,6 @@
             android:text="Settings"
             android:padding="15dp"/>
 
-    </androidx.cardview.widget.CardView>
+    </androidx.cardview.widget.CardView> -->
 
 </LinearLayout>

@@ -19,7 +19,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MusicDemoApp">
         <activity
-            android:name=".SongActivity"
+            android:name=".MusicActivity"
             android:exported="false" />
         <activity
             android:name=".MusicPlayerActivity"

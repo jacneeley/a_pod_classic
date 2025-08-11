@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import Utilities.AlertHandler;
+
 public class MusicPlayerActivity extends AppCompatActivity {
     private Context context;
     private TextView titleTv, artistTv, currentTimeTv, totalTimeTv;
@@ -211,11 +213,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
     }
 
     private void handleEmptySongList(){
-        AlertDialog.Builder builder = new AlertDialog.Builder(MusicPlayerActivity.this);
-        builder.setTitle("Alert:");
-        builder.setMessage("ERROR: Track could not be found...");
-        builder.setCancelable(false);
-
+        AlertDialog.Builder builder = AlertHandler.okAlert(MusicPlayerActivity.this, "Alert:", "ERROR: Track could not be found...");
         builder.setPositiveButton("OK", (DialogInterface.OnClickListener) (dialog, which) -> {
             //go back
             Intent intent = new Intent(MusicPlayerActivity.this, MainActivity.class);
