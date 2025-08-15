@@ -131,7 +131,7 @@ public class MusicActivity extends AppCompatActivity {
 
         cursor.close();
 
-        buildRecyclerView("Albums", albumsList, MusicActivity.this);
+        buildRecyclerView("Album", albumsList, MusicActivity.this);
     }
 
     private void buildRecyclerView(String type, ArrayList<?> objList, Context context){
@@ -143,8 +143,10 @@ public class MusicActivity extends AppCompatActivity {
             switch(type){
                 case "Album":
                     recyclerView.setAdapter(new AlbumListAdapter(this.albumsList, context));
+                    break;
                 case"All":
                     recyclerView.setAdapter(new MusicListAdapter(songsList, getApplicationContext()));
+                    break;
             }
 
         }
