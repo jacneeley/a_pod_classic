@@ -38,7 +38,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
 
     private boolean shuffle = false;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -204,12 +203,6 @@ public class MusicPlayerActivity extends AppCompatActivity {
 
     private void shuffleSongs(){
         shuffle = !shuffle;
-    }
-
-    private void updateIntent(){
-        Intent intent = new Intent(context, MusicPlayerActivity.class);
-        intent.putExtra("LIST", songsList);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
     }
 
     private void handleEmptySongList(){

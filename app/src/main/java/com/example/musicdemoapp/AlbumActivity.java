@@ -1,12 +1,14 @@
 package com.example.musicdemoapp;
 
+import static android.content.ContentValues.TAG;
+
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -20,35 +22,36 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 
 import Utilities.AlertHandler;
 
-public class MusicActivity extends AppCompatActivity {
+public class AlbumActivity extends AppCompatActivity {
     RecyclerView recyclerView;
-    TextView noMusicTextView;
+    TextView albumTv, noTracksTextView;
     ArrayList<AudioModel> songsList = new ArrayList<>();
-    ArrayList<String> albumsList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_song);
+        setContentView(R.layout.activity_album);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        //activity IDs
-        recyclerView = findViewById(R.id.recycler_view);
-        noMusicTextView = findViewById(R.id.no_songs_text);
+        checkIntent();
 
+        queryCursor();
+
+        buildRecyclerView();
+    }
+
+    private void checkIntent(){
         if(getIntent() == null){
-            //TODO: add alert
             AlertDialog.Builder builder = AlertHandler.okAlert(
-                    MusicActivity.this,
+                    AlbumActivity.this,
                     "ERROR:",
                     "Unexpected Error Occurred...");
 
@@ -59,39 +62,36 @@ public class MusicActivity extends AppCompatActivity {
 
             AlertDialog alert = builder.create();
             alert.show();
+            Log.e(TAG, "onCreate: Error with Intent.",new Throwable(new NullPointerException("Intent is null")));
         }
-
-        int viewSelection = (int) getIntent().getSerializableExtra("selection");
-        if(viewSelection == 0){
-            showAllMusic();
-        }
-        else if(viewSelection == 1){
-            showAllAlbums();
-        }
-        //TODO: implement this
-//        else if(viewSelection == 3){
-//            showAllArtists();
-//        }
     }
 
-    private void showAllMusic(){
+    private void queryCursor(){
+        recyclerView = findViewById(R.id.recycler_view);
+        albumTv = findViewById(R.id.album_text);
+
+        String albumName = (String) getIntent().getSerializableExtra("ALBUM_NAME");
+        albumTv.setText(albumName);
+
         String[] projection = {
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.ARTIST,
                 MediaStore.Audio.Media.ALBUM,
-                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.DURATION
         };
 
-        //access tracks
-        String selection = MediaStore.Audio.Media.IS_MUSIC + " !=0";
+        String where = MediaStore.Audio.Media.ALBUM + "=?";
+        String[] whereVal = { albumName };
+        //String orderBy = MediaStore.Audio.Media.CD_TRACK_NUMBER;
 
         Cursor cursor = getContentResolver().query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                 projection,
-                selection,
-                null,
-                MediaStore.Audio.Media.TITLE + " ASC");
+                where,
+                whereVal,
+                null
+        );
 
         while(cursor.moveToNext()){
             String path = cursor.getString(0);
@@ -104,49 +104,15 @@ public class MusicActivity extends AppCompatActivity {
             }
         }
         cursor.close();
-
-        buildRecyclerView("All", songsList, getApplicationContext());
     }
 
-    private void showAllAlbums(){
-        String[] projection = {
-                MediaStore.Audio.Albums._ID,
-                MediaStore.Audio.Albums.ALBUM
-        };
-
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                projection,
-                null,
-                null,
-                MediaStore.Audio.Albums.ALBUM + " ASC"
-        );
-
-        while(cursor.moveToNext()){
-            if(!cursor.getString(0).isEmpty()){
-                String album = cursor.getString(1);
-                albumsList.add(album);
-            }
-        }
-
-        cursor.close();
-
-        buildRecyclerView("Albums", albumsList, MusicActivity.this);
-    }
-
-    private void buildRecyclerView(String type, ArrayList<?> objList, Context context){
-        if(objList.isEmpty()){
-            noMusicTextView.setVisibility(View.VISIBLE);
+    private void buildRecyclerView(){
+        if(songsList.isEmpty()){
+            noTracksTextView.setVisibility(View.VISIBLE);
         }
         else {
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
-            switch(type){
-                case "Album":
-                    recyclerView.setAdapter(new AlbumListAdapter(this.albumsList, context));
-                case"All":
-                    recyclerView.setAdapter(new MusicListAdapter(songsList, getApplicationContext()));
-            }
-
+            recyclerView.setAdapter(new MusicListAdapter(songsList, AlbumActivity.this));
         }
     }
 }

@@ -41,21 +41,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        //handle selection
-        songView = findViewById(R.id.songs_card);
-        songView.setOnClickListener(sv -> {
-            startActivityWithSelection(0);
-        });
-
-        albumView = findViewById(R.id.albums_card);
-        albumView.setOnClickListener(av -> {
-            startActivityWithSelection(1);
-        });
-
-        artistView = findViewById(R.id.artists_card);
-        artistView.setOnClickListener(arv -> {
-            startActivityWithSelection(2);
-        });
+        handleSelection();
     }
 
     private boolean checkPermissions(){
@@ -99,5 +85,22 @@ public class MainActivity extends AppCompatActivity {
 
         AlertDialog alert = builder.create();
         alert.show();
+    }
+
+    private void handleSelection(){
+        songView = findViewById(R.id.songs_card);
+        songView.setOnClickListener(sv -> {
+            startActivityWithSelection(0);
+        });
+
+        albumView = findViewById(R.id.albums_card);
+        albumView.setOnClickListener(av -> {
+            startActivityWithSelection(1);
+        });
+
+        artistView = findViewById(R.id.artists_card);
+        artistView.setOnClickListener(arv -> {
+            startActivityWithSelection(2);
+        });
     }
 }
