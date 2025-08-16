@@ -19,6 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MusicDemoApp">
         <activity
+            android:name=".ArtistActivity"
+            android:exported="false" />
+        <activity
             android:name=".AlbumActivity"
             android:exported="false"
             android:launchMode="standard" />

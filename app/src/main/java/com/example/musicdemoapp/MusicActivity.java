@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
@@ -25,10 +26,13 @@ import java.util.List;
 import Utilities.AlertHandler;
 
 public class MusicActivity extends AppCompatActivity {
+    Context context;
     RecyclerView recyclerView;
-    TextView noMusicTextView;
+    TextView noMusicTextView, titleTv;
     ArrayList<AudioModel> songsList = new ArrayList<>();
     ArrayList<String> albumsList = new ArrayList<>();
+    ArrayList<String> artistList = new ArrayList<>();
+    private MediaPlayer mediaPlayer = MyMediaPlayer.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +48,7 @@ public class MusicActivity extends AppCompatActivity {
         //activity IDs
         recyclerView = findViewById(R.id.recycler_view);
         noMusicTextView = findViewById(R.id.no_songs_text);
+        titleTv = findViewById(R.id.title_text);
 
         if(getIntent() == null){
             //TODO: add alert
@@ -63,15 +68,20 @@ public class MusicActivity extends AppCompatActivity {
 
         int viewSelection = (int) getIntent().getSerializableExtra("selection");
         if(viewSelection == 0){
+            titleTv.setText("TRACKS");
             showAllMusic();
         }
         else if(viewSelection == 1){
+            titleTv.setText("ALBUMS");
             showAllAlbums();
         }
-        //TODO: implement this
-//        else if(viewSelection == 3){
-//            showAllArtists();
-//        }
+        else if(viewSelection == 2){
+            titleTv.setText("ARTISTS");
+            showAllArtists();
+        }
+        else if (viewSelection == 3){
+            nowPlaying();
+        }
     }
 
     private void showAllMusic(){
@@ -134,6 +144,40 @@ public class MusicActivity extends AppCompatActivity {
         buildRecyclerView("Album", albumsList, MusicActivity.this);
     }
 
+    private void showAllArtists(){
+        String[] projection = {
+                MediaStore.Audio.Artists._ID,
+                MediaStore.Audio.Artists.ARTIST
+        };
+
+        Cursor cursor = getContentResolver().query(
+                MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                MediaStore.Audio.Artists.ARTIST + " ASC"
+        );
+
+        while(cursor.moveToNext()){
+            if(!cursor.getString(0).isEmpty()){
+                String artist = cursor.getString(1);
+                artistList.add(artist);
+            }
+        }
+
+        cursor.close();
+
+        buildRecyclerView("Artist", artistList, MusicActivity.this);
+    }
+
+    private void nowPlaying(){
+        if(mediaPlayer != null && mediaPlayer.isPlaying()){
+            Intent intent = new Intent(context, MusicPlayerActivity.class);
+            intent.setFlags(0);
+            context.startActivity(intent);
+        }
+    }
+
     private void buildRecyclerView(String type, ArrayList<?> objList, Context context){
         if(objList.isEmpty()){
             noMusicTextView.setVisibility(View.VISIBLE);
@@ -141,6 +185,9 @@ public class MusicActivity extends AppCompatActivity {
         else {
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
             switch(type){
+                case "Artist":
+                    recyclerView.setAdapter(new ArtistListAdapter(this.artistList, context));
+                    break;
                 case "Album":
                     recyclerView.setAdapter(new AlbumListAdapter(this.albumsList, context));
                     break;
@@ -148,7 +195,6 @@ public class MusicActivity extends AppCompatActivity {
                     recyclerView.setAdapter(new MusicListAdapter(songsList, getApplicationContext()));
                     break;
             }
-
         }
     }
 }

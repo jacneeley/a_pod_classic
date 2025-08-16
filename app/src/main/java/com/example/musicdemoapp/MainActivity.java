@@ -19,7 +19,7 @@ import androidx.core.view.WindowInsetsCompat;
 import Utilities.AlertHandler;
 
 public class MainActivity extends AppCompatActivity {
-    CardView songView, albumView, artistView;
+    CardView songView, albumView, artistView, mediaView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +101,11 @@ public class MainActivity extends AppCompatActivity {
         artistView = findViewById(R.id.artists_card);
         artistView.setOnClickListener(arv -> {
             startActivityWithSelection(2);
+        });
+
+        mediaView = findViewById(R.id.now_playing_card);
+        mediaView.setOnClickListener(arv -> {
+            startActivityWithSelection(3);
         });
     }
 }

@@ -16,7 +16,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Songs"
+            android:text="Tracks"
             android:padding="15dp"/>
 
     </androidx.cardview.widget.CardView>
@@ -46,6 +46,20 @@
             android:padding="15dp"/>
 
     </androidx.cardview.widget.CardView>
+
+    <!-- TODO: fix this shit -->
+    <!-- <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/now_playing_card">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Now Playing"
+            android:padding="15dp"/>
+
+    </androidx.cardview.widget.CardView> -->
 
     <!-- TODO: implement these later -->
     <!-- <androidx.cardview.widget.CardView

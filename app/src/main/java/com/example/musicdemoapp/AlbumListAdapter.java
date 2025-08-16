@@ -48,7 +48,6 @@ public class AlbumListAdapter extends RecyclerView.Adapter<AlbumListAdapter.Albu
                     this.intent.setFlags(0);
 
                     context.startActivity(this.intent);
-
                 }  catch (Exception e){
                     Log.e(TAG, "Failed to start AlbumActivity", e);
                     //Log.e(TAG, "onClick: ", e);
