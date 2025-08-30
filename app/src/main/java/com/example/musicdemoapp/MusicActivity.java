@@ -21,18 +21,19 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 
-import Utilities.AlertHandler;
+import apodrepo.APodRepo;
+import utilities.AlertHandler;
 
 public class MusicActivity extends AppCompatActivity {
     Context context;
     RecyclerView recyclerView;
     TextView noMusicTextView, titleTv;
-    ArrayList<AudioModel> songsList = new ArrayList<>();
-    ArrayList<String> albumsList = new ArrayList<>();
-    ArrayList<String> artistList = new ArrayList<>();
-    private MediaPlayer mediaPlayer = MyMediaPlayer.getInstance();
+    ArrayList<AudioModel> songsList;
+    ArrayList<String> albumsList;
+    ArrayList<String> artistList;
+    private final MediaPlayer mediaPlayer = MyMediaPlayer.getInstance();
+    APodRepo aPodRepo = new APodRepo();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,19 +52,7 @@ public class MusicActivity extends AppCompatActivity {
         titleTv = findViewById(R.id.title_text);
 
         if(getIntent() == null){
-            //TODO: add alert
-            AlertDialog.Builder builder = AlertHandler.okAlert(
-                    MusicActivity.this,
-                    "ERROR:",
-                    "Unexpected Error Occurred...");
-
-            builder.setPositiveButton("OK", (DialogInterface.OnClickListener) (dialog, which) -> {
-                finish();
-                startActivity(new Intent(this, MainActivity.class));
-            });
-
-            AlertDialog alert = builder.create();
-            alert.show();
+            handleIntentFailure();
         }
 
         int viewSelection = (int) getIntent().getSerializableExtra("selection");
@@ -85,88 +74,17 @@ public class MusicActivity extends AppCompatActivity {
     }
 
     private void showAllMusic(){
-        String[] projection = {
-                MediaStore.Audio.Media.DATA,
-                MediaStore.Audio.Media.TITLE,
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.ALBUM,
-                MediaStore.Audio.Media.DURATION,
-        };
-
-        //access tracks
-        String selection = MediaStore.Audio.Media.IS_MUSIC + " !=0";
-
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                selection,
-                null,
-                MediaStore.Audio.Media.TITLE + " ASC");
-
-        while(cursor.moveToNext()){
-            String path = cursor.getString(0);
-            String title = cursor.getString(1);
-            String artist = cursor.getString(2);
-            String album = cursor.getString(3);
-            String duration = cursor.getString(4);
-            if (new File(path).exists()) {
-                songsList.add(new AudioModel(path, title, artist, album, duration));
-            }
-        }
-        cursor.close();
-
+        songsList = aPodRepo.getAllMusic(this);
         buildRecyclerView("All", songsList, getApplicationContext());
     }
 
     private void showAllAlbums(){
-        String[] projection = {
-                MediaStore.Audio.Albums._ID,
-                MediaStore.Audio.Albums.ALBUM
-        };
-
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                projection,
-                null,
-                null,
-                MediaStore.Audio.Albums.ALBUM + " ASC"
-        );
-
-        while(cursor.moveToNext()){
-            if(!cursor.getString(0).isEmpty()){
-                String album = cursor.getString(1);
-                albumsList.add(album);
-            }
-        }
-
-        cursor.close();
-
+        albumsList = aPodRepo.getAllAlbums(this);
         buildRecyclerView("Album", albumsList, MusicActivity.this);
     }
 
     private void showAllArtists(){
-        String[] projection = {
-                MediaStore.Audio.Artists._ID,
-                MediaStore.Audio.Artists.ARTIST
-        };
-
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI,
-                projection,
-                null,
-                null,
-                MediaStore.Audio.Artists.ARTIST + " ASC"
-        );
-
-        while(cursor.moveToNext()){
-            if(!cursor.getString(0).isEmpty()){
-                String artist = cursor.getString(1);
-                artistList.add(artist);
-            }
-        }
-
-        cursor.close();
-
+        artistList = aPodRepo.getAllArtists(this);
         buildRecyclerView("Artist", artistList, MusicActivity.this);
     }
 
@@ -196,5 +114,20 @@ public class MusicActivity extends AppCompatActivity {
                     break;
             }
         }
+    }
+
+    private void handleIntentFailure(){
+        AlertDialog.Builder builder = AlertHandler.okAlert(
+                MusicActivity.this,
+                "ERROR:",
+                "Unexpected Error Occurred...");
+
+        builder.setPositiveButton("OK", (DialogInterface.OnClickListener) (dialog, which) -> {
+            finish();
+            startActivity(new Intent(this, MainActivity.class));
+        });
+
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 }

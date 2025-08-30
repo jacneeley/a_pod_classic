@@ -23,12 +23,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.io.File;
 import java.util.ArrayList;
 
-import Utilities.AlertHandler;
+import apodrepo.APodRepo;
+import utilities.AlertHandler;
 
 public class AlbumActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     TextView albumTv, noTracksTextView;
-    ArrayList<AudioModel> songsList = new ArrayList<>();
+    ArrayList<AudioModel> songsList;
+
+    APodRepo aPodRepo = new APodRepo();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,37 +76,8 @@ public class AlbumActivity extends AppCompatActivity {
         String albumName = (String) getIntent().getSerializableExtra("ALBUM_NAME");
         albumTv.setText(albumName);
 
-        String[] projection = {
-                MediaStore.Audio.Media.DATA,
-                MediaStore.Audio.Media.TITLE,
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.ALBUM,
-                MediaStore.Audio.Media.DURATION
-        };
+        songsList = aPodRepo.getSongsByAlbumName(this, albumName);
 
-        String where = MediaStore.Audio.Media.ALBUM + "=?";
-        String[] whereVal = { albumName };
-        //String orderBy = MediaStore.Audio.Media.CD_TRACK_NUMBER;
-
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                where,
-                whereVal,
-                null
-        );
-
-        while(cursor.moveToNext()){
-            String path = cursor.getString(0);
-            String title = cursor.getString(1);
-            String artist = cursor.getString(2);
-            String album = cursor.getString(3);
-            String duration = cursor.getString(4);
-            if (new File(path).exists()) {
-                songsList.add(new AudioModel(path, title, artist, album, duration));
-            }
-        }
-        cursor.close();
     }
 
     private void buildRecyclerView(){

@@ -22,7 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
-import Utilities.AlertHandler;
+import utilities.AlertHandler;
 
 public class ArtistActivity extends AppCompatActivity {
     RecyclerView recyclerView;
@@ -93,7 +93,9 @@ public class ArtistActivity extends AppCompatActivity {
         while(cursor.moveToNext()){
             if(!cursor.getString(0).isEmpty()){
                 String album = cursor.getString(1);
-                albumsList.add(album);
+                if(!albumsList.contains(album)){
+                    albumsList.add(album);
+                }
             }
         }
         cursor.close();

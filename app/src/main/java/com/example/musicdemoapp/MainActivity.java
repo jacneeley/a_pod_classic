@@ -2,6 +2,7 @@ package com.example.musicdemoapp;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -16,10 +17,16 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import Utilities.AlertHandler;
+import java.util.HashMap;
+
+import apodrepo.APodRepo;
+import utilities.AlbumArtMap;
+import utilities.AlertHandler;
 
 public class MainActivity extends AppCompatActivity {
+    Context context;
     CardView songView, albumView, artistView, mediaView;
+    APodRepo aPodRepo = new APodRepo();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,13 +42,17 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        //allow permission
+        init();
+
+        handleSelection();
+    }
+
+    private void init(){
         if(!this.checkPermissions()){
             requestPermission();
             return;
         }
-
-        handleSelection();
+        aPodRepo.getAllAlbumsArt(this);
     }
 
     private boolean checkPermissions(){
@@ -72,21 +83,6 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void handleRejection(){
-        AlertDialog.Builder builder = AlertHandler.okAlert(
-                MainActivity.this,
-                "Alert:",
-                "aPod requires read permissions to access your device's audio files. You must grant access to continue using aPod.");
-
-        builder.setPositiveButton("OK", (DialogInterface.OnClickListener) (dialog, which) -> {
-            finish();
-            startActivity(getIntent());
-        });
-
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
-
     private void handleSelection(){
         songView = findViewById(R.id.songs_card);
         songView.setOnClickListener(sv -> {
@@ -103,9 +99,24 @@ public class MainActivity extends AppCompatActivity {
             startActivityWithSelection(2);
         });
 
-        mediaView = findViewById(R.id.now_playing_card);
-        mediaView.setOnClickListener(arv -> {
-            startActivityWithSelection(3);
+//        mediaView = findViewById(R.id.now_playing_card);
+//        mediaView.setOnClickListener(arv -> {
+//            startActivityWithSelection(3);
+//        });
+    }
+
+    private void handleRejection(){
+        AlertDialog.Builder builder = AlertHandler.okAlert(
+                MainActivity.this,
+                "Alert:",
+                "aPod requires read permissions to access your device's audio files. You must grant access to continue using aPod.");
+
+        builder.setPositiveButton("OK", (DialogInterface.OnClickListener) (dialog, which) -> {
+            finish();
+            startActivity(getIntent());
         });
+
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 }

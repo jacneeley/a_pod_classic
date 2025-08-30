@@ -1,7 +1,6 @@
-package com.example.musicdemoapp;
+package utilities;
 
 import java.util.ArrayDeque;
-import java.util.stream.Collectors;
 
 public class QueueManager {
     /* A class to manage an ArrayDeque for queueing songs. */

@@ -5,9 +5,12 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -20,23 +23,26 @@ import androidx.core.view.WindowInsetsCompat;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import Utilities.AlertHandler;
+import utilities.AlbumArtMap;
+import utilities.AlertHandler;
 
 public class MusicPlayerActivity extends AppCompatActivity {
     private Context context;
-    private TextView titleTv, artistTv, currentTimeTv, totalTimeTv;
+    private TextView titleTv, artistTv, currentTimeTv, totalTimeTv, albumTv;
     private SeekBar seekBar;
     private ImageView playPause, nextBtn, previousBtn, albumArt, shuffleBtn;
-
     private ArrayList<AudioModel> songsList;
     private AudioModel currentSong;
 
-    private MediaPlayer mediaPlayer = MyMediaPlayer.getInstance();
+    private final MediaPlayer mediaPlayer = MyMediaPlayer.getInstance();
 
-    private boolean shuffle = false;
+    private final HashMap<String, String> artMap = AlbumArtMap.getArtMap();
+    private String currentArt;
+    private static boolean isShuffle = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,24 +55,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             return insets;
         });
 
-        titleTv = findViewById(R.id.song_title);
-        artistTv = findViewById(R.id.song_artist);
-        currentTimeTv = findViewById(R.id.current_time);
-        totalTimeTv = findViewById(R.id.total_time);
-        shuffleBtn = findViewById(R.id.shuffle);
-
-        seekBar = findViewById(R.id.seek_bar);
-
-        playPause = findViewById(R.id.pause);
-        nextBtn = findViewById(R.id.next);
-        previousBtn = findViewById(R.id.previous);
-
-        albumArt = findViewById(R.id.album_art);
-
-        titleTv.setSelected(true);
-        artistTv.setSelected(true);
-
-        songsList = getIntent().getSerializableExtra("LIST") != null ? (ArrayList<AudioModel>) getIntent().getSerializableExtra("LIST") : new ArrayList<>();
+        init();
 
         setResourcesWithMusic();
 
@@ -113,15 +102,43 @@ public class MusicPlayerActivity extends AppCompatActivity {
         });
     }
 
+    private void init(){
+        titleTv = findViewById(R.id.song_title);
+        artistTv = findViewById(R.id.song_artist);
+        albumTv = findViewById(R.id.album_text);
+        currentTimeTv = findViewById(R.id.current_time);
+        totalTimeTv = findViewById(R.id.total_time);
+        shuffleBtn = findViewById(R.id.shuffle);
+
+        seekBar = findViewById(R.id.seek_bar);
+
+        playPause = findViewById(R.id.pause);
+        nextBtn = findViewById(R.id.next);
+        previousBtn = findViewById(R.id.previous);
+
+        albumArt = findViewById(R.id.album_art);
+
+        titleTv.setSelected(true);
+        artistTv.setSelected(true);
+        albumTv.setSelected(true);
+        albumArt.setSelected(true);
+
+        songsList = getIntent().getSerializableExtra("LIST") != null ? (ArrayList<AudioModel>) getIntent().getSerializableExtra("LIST") : new ArrayList<>();
+    }
+
     private void setResourcesWithMusic(){
         if(!songsList.isEmpty()){
             currentSong = songsList.get(MyMediaPlayer.currentIndex);
 
             titleTv.setText(currentSong.getTitle());
             artistTv.setText(currentSong.getArtist().isBlank() ? "" : currentSong.getArtist());
+            albumTv.setText(currentSong.getAlbum().isBlank() ? "" : currentSong.getAlbum());
+
+            getAlbumArt();
+            
             totalTimeTv.setText(convertToMinutesAndSeconds(Long.parseLong(currentSong.duration)));
 
-            shuffleBtn.setOnClickListener(v -> shuffleSongs());
+            shuffleBtn.setOnClickListener(v -> isShuffleSongs());
 
             playPause.setOnClickListener(v -> pausePlay());
             nextBtn.setOnClickListener(v -> playNextSong());
@@ -164,9 +181,9 @@ public class MusicPlayerActivity extends AppCompatActivity {
     }
 
     private void playNextSong(){
-        //TODO: figure out why 'Intents' break when in shuffle mode.
+        //TODO: figure out why 'Intents' break when in isShuffle mode.
 
-        if(shuffle){
+        if(isShuffle){
             int min = 0;
             int max = songsList.size() - 1;
             MyMediaPlayer.currentIndex = new Random().nextInt(max - min) + min;
@@ -201,8 +218,21 @@ public class MusicPlayerActivity extends AppCompatActivity {
         }
     }
 
-    private void shuffleSongs(){
-        shuffle = !shuffle;
+    private void isShuffleSongs(){
+        isShuffle = !isShuffle;
+    }
+
+    private void getAlbumArt(){
+        //set albumArt image
+        String albumArtUriStr = artMap.get(currentSong.getAlbumId());
+        if(albumArtUriStr == null) {
+            albumArt.setImageResource(R.drawable.placeholder);
+            //getAlbumArtByAlbumId();
+        }
+        else if(!albumArtUriStr.equalsIgnoreCase(currentArt)){
+            albumArt.setImageURI(Uri.parse(albumArtUriStr));
+            currentArt = albumArtUriStr;
+        }
     }
 
     private void handleEmptySongList(){
@@ -216,4 +246,34 @@ public class MusicPlayerActivity extends AppCompatActivity {
         AlertDialog alert = builder.create();
         alert.show();
     }
+
+    //TODO: delete this later but leave it for now
+//    private void getAlbumArtByAlbumId(){
+//        String albumId = currentSong.getAlbumId();
+//
+//        String[] projection = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART };
+//
+//        String where = MediaStore.Audio.Albums._ID + "=?";
+//
+//        Cursor cursor = getContentResolver().query(
+//                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+//                projection,
+//                where,
+//                new String[] { albumId },
+//                null
+//        );
+//
+//        if(cursor != null & cursor.moveToFirst()){
+//            String path = cursor.getString(1);
+//            if(path != null){
+//                albumArt.setImageURI(Uri.parse(path));
+//                artMap.put(albumId, path);
+//            }
+//            else {
+//                albumArt.setImageResource(R.drawable.placeholder);
+//            }
+//        }
+//
+//        cursor.close();
+//    }
 }
