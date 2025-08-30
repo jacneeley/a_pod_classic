@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
+import apodrepo.APodRepo;
 import utilities.AlertHandler;
 
 public class ArtistActivity extends AppCompatActivity {
@@ -29,6 +30,7 @@ public class ArtistActivity extends AppCompatActivity {
     TextView artistTv, albumTv, trackTv, noTrackTv;
     ArrayList<AudioModel> songsList = new ArrayList<>();
     ArrayList<String> albumsList = new ArrayList<>();
+    APodRepo aPodRepo = new APodRepo();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,32 +75,7 @@ public class ArtistActivity extends AppCompatActivity {
         String artistName = (String) getIntent().getSerializableExtra("ARTIST_NAME");
         artistTv.setText(artistName);
 
-        String[] projection = {
-                MediaStore.Audio.Albums._ID,
-                MediaStore.Audio.Albums.ALBUM
-        };
-
-        String where = MediaStore.Audio.Media.ARTIST + "=?";
-        String[] whereVal = { artistName };
-        String sortOrder = MediaStore.Audio.Media.ALBUM + " ASC";
-
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                where,
-                whereVal,
-                sortOrder
-        );
-
-        while(cursor.moveToNext()){
-            if(!cursor.getString(0).isEmpty()){
-                String album = cursor.getString(1);
-                if(!albumsList.contains(album)){
-                    albumsList.add(album);
-                }
-            }
-        }
-        cursor.close();
+        albumsList = aPodRepo.getAlbumsByArtist(this, artistName);
     }
 
     private void buildRecyclerView(int view, ArrayList<?> audioList){

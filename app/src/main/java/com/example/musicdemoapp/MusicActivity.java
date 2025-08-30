@@ -51,9 +51,7 @@ public class MusicActivity extends AppCompatActivity {
         noMusicTextView = findViewById(R.id.no_songs_text);
         titleTv = findViewById(R.id.title_text);
 
-        if(getIntent() == null){
-            handleIntentFailure();
-        }
+        checkIntent();
 
         int viewSelection = (int) getIntent().getSerializableExtra("selection");
         if(viewSelection == 0){
@@ -116,18 +114,20 @@ public class MusicActivity extends AppCompatActivity {
         }
     }
 
-    private void handleIntentFailure(){
-        AlertDialog.Builder builder = AlertHandler.okAlert(
-                MusicActivity.this,
-                "ERROR:",
-                "Unexpected Error Occurred...");
+    private void checkIntent(){
+        if(getIntent() == null) {
+            AlertDialog.Builder builder = AlertHandler.okAlert(
+                    MusicActivity.this,
+                    "ERROR:",
+                    "Unexpected Error Occurred...");
 
-        builder.setPositiveButton("OK", (DialogInterface.OnClickListener) (dialog, which) -> {
-            finish();
-            startActivity(new Intent(this, MainActivity.class));
-        });
+            builder.setPositiveButton("OK", (DialogInterface.OnClickListener) (dialog, which) -> {
+                finish();
+                startActivity(new Intent(this, MainActivity.class));
+            });
 
-        AlertDialog alert = builder.create();
-        alert.show();
+            AlertDialog alert = builder.create();
+            alert.show();
+        }
     }
 }

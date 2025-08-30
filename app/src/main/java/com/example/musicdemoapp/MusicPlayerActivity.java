@@ -227,6 +227,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         String albumArtUriStr = artMap.get(currentSong.getAlbumId());
         if(albumArtUriStr == null) {
             albumArt.setImageResource(R.drawable.placeholder);
+            currentArt = "";
             //getAlbumArtByAlbumId();
         }
         else if(!albumArtUriStr.equalsIgnoreCase(currentArt)){

@@ -238,4 +238,41 @@ public class APodRepo implements IAPodRepo{
 
         return songsList;
     }
+
+    @Override
+    public ArrayList<String> getAlbumsByArtist(Context context, String artistName) {
+        ArrayList<String> albumsList = new ArrayList<>();
+        try{
+            String[] projection = {
+                    MediaStore.Audio.Albums._ID,
+                    MediaStore.Audio.Albums.ALBUM
+            };
+
+            String where = MediaStore.Audio.Media.ARTIST + "=?";
+            String[] whereVal = { artistName };
+            String sortOrder = MediaStore.Audio.Media.ALBUM + " ASC";
+
+            Cursor cursor = context.getContentResolver().query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    where,
+                    whereVal,
+                    sortOrder
+            );
+
+            while(cursor.moveToNext()){
+                if(!cursor.getString(0).isEmpty()){
+                    String album = cursor.getString(1);
+                    if(!albumsList.contains(album)){
+                        albumsList.add(album);
+                    }
+                }
+            }
+            cursor.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, "getAlbumsByArtist: " + e.getMessage());
+        }
+        return albumsList;
+    }
 }

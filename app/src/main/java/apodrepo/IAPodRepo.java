@@ -14,4 +14,5 @@ public interface IAPodRepo {
     ArrayList<String> getAllArtists(Context context);
 
     ArrayList<AudioModel> getSongsByAlbumName(Context context, String albumName);
+    ArrayList<String> getAlbumsByArtist(Context context, String artistName);
 }
