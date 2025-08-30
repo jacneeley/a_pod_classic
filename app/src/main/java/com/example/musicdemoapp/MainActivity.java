@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -24,7 +25,6 @@ import utilities.AlbumArtMap;
 import utilities.AlertHandler;
 
 public class MainActivity extends AppCompatActivity {
-    Context context;
     CardView songView, albumView, artistView, mediaView;
     APodRepo aPodRepo = new APodRepo();
 
@@ -49,8 +49,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void init(){
         if(!this.checkPermissions()){
-            requestPermission();
-            return;
+            boolean accepted = requestPermission();
+            if(!accepted) {
+                return;
+            }
         }
         aPodRepo.getAllAlbumsArt(this);
     }
@@ -64,17 +66,22 @@ public class MainActivity extends AppCompatActivity {
         return result == PackageManager.PERMISSION_GRANTED;
     }
 
-    private void requestPermission(){
+    private boolean requestPermission(){
         if(ActivityCompat.shouldShowRequestPermissionRationale(
             MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE
         )){
             handleRejection();
         }
         else{
+            String permissionStr = android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    ? Manifest.permission.READ_MEDIA_AUDIO
+                    : Manifest.permission.READ_EXTERNAL_STORAGE;
             ActivityCompat.requestPermissions(
                     MainActivity.this,
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},200);
+                    new String[]{ permissionStr },200);
+            return true;
         }
+        return false;
     }
 
     private void startActivityWithSelection(int selection){
