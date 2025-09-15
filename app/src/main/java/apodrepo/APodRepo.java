@@ -11,6 +11,7 @@ import com.example.musicdemoapp.AudioModel;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import utilities.AlbumArtMap;
@@ -21,7 +22,11 @@ public class APodRepo implements IAPodRepo{
 
     @Override
     public void getAllAlbumsArt(Context context) {
-        String[] projection = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART };
+        String[] projection = {
+                MediaStore.Audio.Albums._ID,
+                MediaStore.Audio.Albums.ALBUM_ART,
+                MediaStore.Audio.Albums.ALBUM
+        };
 
         try{
             Cursor cursor = context.getContentResolver().query(
@@ -35,9 +40,11 @@ public class APodRepo implements IAPodRepo{
                 while(cursor.moveToNext()){
                     String albumId = cursor.getString(0);
                     String path = cursor.getString(1);
+                    String albumName = cursor.getString(2);
 
                     if(path != null){
                         artMap.put(albumId, path);
+                        artMap.put(albumName, path);
                     }
                 }
             }
@@ -47,6 +54,10 @@ public class APodRepo implements IAPodRepo{
             e.printStackTrace();
             Log.e(TAG, "getAllAlbumsArt: " + e.getMessage());
         }
+    }
+
+    public HashMap<String, String> retrieveArt(){
+        return this.artMap;
     }
 
     @Override
@@ -127,12 +138,12 @@ public class APodRepo implements IAPodRepo{
     }
 
     @Override
-    public ArrayList<String> getAllAlbums(Context context) {
-        ArrayList<String> albumsList = new ArrayList<>();
+    public ArrayList<ArrayList<String>> getAllAlbums(Context context) {
+        ArrayList<ArrayList<String>> albumsList = new ArrayList<>();
         try{
             String[] projection = {
                     MediaStore.Audio.Albums._ID,
-                    MediaStore.Audio.Albums.ALBUM,
+                    MediaStore.Audio.Albums.ALBUM
             };
 
             Cursor cursor = context.getContentResolver().query(
@@ -145,7 +156,9 @@ public class APodRepo implements IAPodRepo{
 
             while(cursor.moveToNext()){
                 if(!cursor.getString(0).isEmpty()){
-                    String album = cursor.getString(1);
+                    String albumId = cursor.getString(0);
+                    String albumName = cursor.getString(1);
+                    ArrayList<String> album = new ArrayList<>(Arrays.asList(albumId, albumName));
                     albumsList.add(album);
                 }
             }
@@ -240,15 +253,16 @@ public class APodRepo implements IAPodRepo{
     }
 
     @Override
-    public ArrayList<String> getAlbumsByArtist(Context context, String artistName) {
-        ArrayList<String> albumsList = new ArrayList<>();
+    public ArrayList<ArrayList<String>> getAlbumsByArtist(Context context, String artistName) {
+        ArrayList<String> albumContainer = new ArrayList<>();
+        ArrayList<ArrayList<String>> albumsList = new ArrayList<>();
         try{
             String[] projection = {
                     MediaStore.Audio.Albums._ID,
                     MediaStore.Audio.Albums.ALBUM
             };
 
-            String where = MediaStore.Audio.Media.ARTIST + "=?";
+            String where = MediaStore.Audio.Albums.ARTIST + "=?";
             String[] whereVal = { artistName };
             String sortOrder = MediaStore.Audio.Media.ALBUM + " ASC";
 
@@ -262,8 +276,11 @@ public class APodRepo implements IAPodRepo{
 
             while(cursor.moveToNext()){
                 if(!cursor.getString(0).isEmpty()){
-                    String album = cursor.getString(1);
-                    if(!albumsList.contains(album)){
+                    String albumId = cursor.getString(0);
+                    String albumName = cursor.getString(1);
+                    ArrayList<String> album = new ArrayList<>(Arrays.asList(albumId, albumName));
+                    if(!albumContainer.contains(albumName)){
+                        albumContainer.add(albumName);
                         albumsList.add(album);
                     }
                 }
@@ -275,4 +292,6 @@ public class APodRepo implements IAPodRepo{
         }
         return albumsList;
     }
+
+
 }

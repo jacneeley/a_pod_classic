@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
@@ -21,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import apodrepo.APodRepo;
 import utilities.AlertHandler;
@@ -30,7 +32,7 @@ public class MusicActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     TextView noMusicTextView, titleTv;
     ArrayList<AudioModel> songsList;
-    ArrayList<String> albumsList;
+    ArrayList<ArrayList<String>> albumsList;
     ArrayList<String> artistList;
     private final MediaPlayer mediaPlayer = MyMediaPlayer.getInstance();
     APodRepo aPodRepo = new APodRepo();
@@ -108,7 +110,7 @@ public class MusicActivity extends AppCompatActivity {
                     recyclerView.setAdapter(new AlbumListAdapter(this.albumsList, context));
                     break;
                 case"All":
-                    recyclerView.setAdapter(new MusicListAdapter(songsList, getApplicationContext()));
+                    recyclerView.setAdapter(new MusicListAdapter(songsList, getApplicationContext(),"music_actv"));
                     break;
             }
         }

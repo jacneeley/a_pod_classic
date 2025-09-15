@@ -29,7 +29,7 @@ public class ArtistActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     TextView artistTv, albumTv, trackTv, noTrackTv;
     ArrayList<AudioModel> songsList = new ArrayList<>();
-    ArrayList<String> albumsList = new ArrayList<>();
+    ArrayList<ArrayList<String>> albumsList = new ArrayList<>();
     APodRepo aPodRepo = new APodRepo();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,7 +91,7 @@ public class ArtistActivity extends AppCompatActivity {
         }
         else {
             //show all tracks for artist
-            recyclerView.setAdapter(new MusicListAdapter(songsList, ArtistActivity.this));
+            recyclerView.setAdapter(new MusicListAdapter(songsList, ArtistActivity.this, "artist_actv"));
         }
     }
 }

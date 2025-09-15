@@ -6,10 +6,12 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -21,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 import apodrepo.APodRepo;
@@ -29,8 +32,9 @@ import utilities.AlertHandler;
 public class AlbumActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     TextView albumTv, noTracksTextView;
+    ImageView albumCover;
     ArrayList<AudioModel> songsList;
-
+    String albumActv = "album_actv";
     APodRepo aPodRepo = new APodRepo();
 
     @Override
@@ -72,12 +76,21 @@ public class AlbumActivity extends AppCompatActivity {
     private void queryCursor(){
         recyclerView = findViewById(R.id.recycler_view);
         albumTv = findViewById(R.id.album_text);
+        albumCover = findViewById(R.id.album_cover);
 
-        String albumName = (String) getIntent().getSerializableExtra("ALBUM_NAME");
-        albumTv.setText(albumName);
+        ArrayList<String> album = (ArrayList<String>) getIntent().getSerializableExtra("ALBUM");
+        if(album != null){
+            String albumId = album.get(0);
+            String albumName = album.get(1);
+            String albumArtUriStr = album.get(2).isEmpty()
+                    ? aPodRepo.retrieveArt().get(albumName)
+                    : album.get(2);
+            albumTv.setText(albumName);
 
-        songsList = aPodRepo.getSongsByAlbumName(this, albumName);
+            setAlbumArt(albumArtUriStr);
 
+            songsList = aPodRepo.getSongsByAlbumName(this, albumName);
+        }
     }
 
     private void buildRecyclerView(){
@@ -86,7 +99,16 @@ public class AlbumActivity extends AppCompatActivity {
         }
         else {
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
-            recyclerView.setAdapter(new MusicListAdapter(songsList, AlbumActivity.this));
+            recyclerView.setAdapter(new MusicListAdapter(songsList, AlbumActivity.this, albumActv));
+        }
+    }
+
+    private void setAlbumArt(String albumArtUriStr){
+        if(albumArtUriStr != null){
+            albumCover.setImageURI(Uri.parse(albumArtUriStr));
+        }
+        else{
+            albumCover.setImageResource(R.drawable.placeholder);
         }
     }
 }

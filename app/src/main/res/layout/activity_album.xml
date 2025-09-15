@@ -7,6 +7,15 @@
     android:layout_height="match_parent"
     tools:context=".AlbumActivity">
 
+    <ImageView
+        android:id="@+id/album_cover"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:contentDescription="album art"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/placeholder"
+        />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -15,7 +24,8 @@
         android:textSize="20sp"
         android:textStyle="bold"
         android:padding="10dp"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/album_cover"/>
 
     <TextView
         android:layout_width="wrap_content"
