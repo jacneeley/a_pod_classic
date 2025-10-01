@@ -109,7 +109,6 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_marginTop="16dp"
-            android:src="@drawable/shuffle"
             app:layout_constraintEnd_toEndOf="@id/song_artist"
             app:layout_constraintTop_toBottomOf="@+id/song_artist" />
     </androidx.constraintlayout.widget.ConstraintLayout>

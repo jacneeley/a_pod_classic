@@ -14,6 +14,7 @@ import android.provider.MediaStore;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -83,6 +84,13 @@ public class MusicPlayerActivity extends AppCompatActivity {
                         playPause.setImageResource(R.drawable.baseline_play_circle);
                     }
 
+                    if(isShuffle){
+                        shuffleBtn.setImageResource(R.drawable.shuffle_selected);
+                    }
+                    else{
+                        shuffleBtn.setImageResource(R.drawable.shuffle);
+                    }
+
                     new Handler().postDelayed(this, 100);
                 }
             }
@@ -138,6 +146,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             
             totalTimeTv.setText(convertToMinutesAndSeconds(Long.parseLong(currentSong.duration)));
 
+
             shuffleBtn.setOnClickListener(v -> isShuffleSongs());
 
             playPause.setOnClickListener(v -> pausePlay());
@@ -181,7 +190,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
     }
 
     private void playNextSong(){
-        //TODO: figure out why 'Intents' break when in isShuffle mode.
+        //TODO: figure out why 'Intents' break when in isShuffle mode. --This seems to be fine 09/30/25
+        //TODO: figure out why mediaplayer does not update when shuffle is true.
 
         if(isShuffle){
             int min = 0;
@@ -220,6 +230,13 @@ public class MusicPlayerActivity extends AppCompatActivity {
 
     private void isShuffleSongs(){
         isShuffle = !isShuffle;
+        if(isShuffle){
+            shuffleBtn.setImageResource(R.drawable.shuffle_selected);
+            Toast.makeText(this, "Shuffle is On", Toast.LENGTH_SHORT).show();
+        }
+        else{
+            shuffleBtn.setImageResource(R.drawable.shuffle);
+        }
     }
 
     private void getAlbumArt(){
