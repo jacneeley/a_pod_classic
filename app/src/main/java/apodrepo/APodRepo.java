@@ -293,5 +293,55 @@ public class APodRepo implements IAPodRepo{
         return albumsList;
     }
 
+    @Override
+    public ArrayList<AudioModel> getSongsByArtistName(Context context , String artistName){
+        ArrayList<AudioModel> songsList = new ArrayList<AudioModel>();
+        try{
+            String[] projection = {
+                    MediaStore.Audio.Media.DATA,
+                    MediaStore.Audio.Media.TITLE,
+                    MediaStore.Audio.Media.ARTIST,
+                    MediaStore.Audio.Media.ALBUM,
+                    MediaStore.Audio.Media.DURATION,
+                    MediaStore.Audio.Media.ALBUM_ID
+            };
+
+            String where = MediaStore.Audio.Media.ARTIST + "=?";
+            String[] whereVal = { artistName };
+            String orderBy = MediaStore.Audio.Media.ALBUM + " ASC";
+
+            Cursor cursor = context.getContentResolver().query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    where,
+                    whereVal,
+                    orderBy
+            );
+
+            while(cursor.moveToNext()){
+                String path = cursor.getString(0);
+                String title = cursor.getString(1);
+                String artist = cursor.getString(2);
+                String album = cursor.getString(3);
+                String duration = cursor.getString(4);
+                String albumId = cursor.getString(5);
+                if (new File(path).exists()) {
+                    songsList.add(new AudioModel(path, title, artist, album, albumId, duration));
+                }
+            }
+            cursor.close();
+        }catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, "getSongsByAlbumName: " + e.getMessage());
+        }
+
+        return songsList;
+    }
+
+    private void queryBuilder(String listType, ArrayList<?> arrayList, String[] projection, String whereCondition,
+                              String[] whereVal, String orderBy) {
+        //TODO: make a builder for cursor to reduce code in the repo class.
+    }
+
 
 }

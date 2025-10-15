@@ -5,11 +5,11 @@ import static android.content.ContentValues.TAG;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -28,9 +28,12 @@ import utilities.AlertHandler;
 public class ArtistActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     TextView artistTv, albumTv, trackTv, noTrackTv;
+    Button songsBtn, albumsBtn;
+    boolean songSelected, albumSelected = false;
     ArrayList<AudioModel> songsList = new ArrayList<>();
     ArrayList<ArrayList<String>> albumsList = new ArrayList<>();
     APodRepo aPodRepo = new APodRepo();
+    String artistName = "";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,10 +47,13 @@ public class ArtistActivity extends AppCompatActivity {
 
         checkIntent();
 
-        //query albums by default
-        getAlbumsByArtist();
+        initUI();
 
+        //query albums by default
+        getAlbumsByArtist(artistName);
         buildRecyclerView(0, albumsList);
+
+        handleSelection();
     }
 
     private void checkIntent(){
@@ -68,14 +74,28 @@ public class ArtistActivity extends AppCompatActivity {
         }
     }
 
-    private void getAlbumsByArtist(){
+    private void initUI(){
         recyclerView = findViewById(R.id.recycler_view);
         artistTv = findViewById(R.id.artist_text);
 
-        String artistName = (String) getIntent().getSerializableExtra("ARTIST_NAME");
+        artistName = (String) getIntent().getSerializableExtra("ARTIST_NAME");
         artistTv.setText(artistName);
 
+        albumsBtn = findViewById(R.id.albumBtn);
+        albumsBtn.setBackgroundColor(Color.BLACK);
+        albumsBtn.setTextColor(Color.WHITE);
+
+        songsBtn = findViewById(R.id.songBtn);
+        songsBtn.setBackgroundColor(Color.TRANSPARENT);
+        songsBtn.setTextColor(Color.BLACK);
+    }
+
+    private void getAlbumsByArtist(String artistName){
         albumsList = aPodRepo.getAlbumsByArtist(this, artistName);
+    }
+
+    private void getSongsByArtist(String artistName){
+        songsList = aPodRepo.getSongsByArtistName(this, artistName);
     }
 
     private void buildRecyclerView(int view, ArrayList<?> audioList){
@@ -93,5 +113,33 @@ public class ArtistActivity extends AppCompatActivity {
             //show all tracks for artist
             recyclerView.setAdapter(new MusicListAdapter(songsList, ArtistActivity.this, "artist_actv"));
         }
+    }
+
+    private void handleSelection(){
+        albumsBtn.setOnClickListener(ab -> {
+            if(albumsList.isEmpty()){
+                getAlbumsByArtist(artistName);
+            }
+
+            albumsBtn.setBackgroundColor(Color.BLACK);
+            albumsBtn.setTextColor(Color.WHITE);
+            songsBtn.setBackgroundColor(Color.TRANSPARENT);
+            songsBtn.setTextColor(Color.BLACK);
+
+            buildRecyclerView(0, albumsList);
+        });
+
+        songsBtn.setOnClickListener(sb -> {
+            if(songsList.isEmpty()){
+                getSongsByArtist(artistName);
+            }
+
+            songsBtn.setBackgroundColor(Color.BLACK);
+            songsBtn.setTextColor(Color.WHITE);
+            albumsBtn.setBackgroundColor(Color.TRANSPARENT);
+            albumsBtn.setTextColor(Color.BLACK);
+
+            buildRecyclerView(1, songsList);
+        });
     }
 }
