@@ -142,7 +142,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             artistTv.setText(currentSong.getArtist().isBlank() ? "" : currentSong.getArtist());
             albumTv.setText(currentSong.getAlbum().isBlank() ? "" : currentSong.getAlbum());
 
-            getAlbumArt();
+            setAlbumArt();
             
             totalTimeTv.setText(convertToMinutesAndSeconds(Long.parseLong(currentSong.duration)));
 
@@ -239,9 +239,10 @@ public class MusicPlayerActivity extends AppCompatActivity {
         }
     }
 
-    private void getAlbumArt(){
+    private void setAlbumArt(){
         //set albumArt image
-        String albumArtUriStr = artMap.get(currentSong.getAlbumId());
+        String artId = currentSong.getArtist()+ "_" + currentSong.getAlbum();
+        String albumArtUriStr = artMap.get(artId);
         if(albumArtUriStr == null) {
             albumArt.setImageResource(R.drawable.placeholder);
             currentArt = "";
@@ -250,6 +251,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         else if(!albumArtUriStr.equalsIgnoreCase(currentArt)){
             albumArt.setImageURI(Uri.parse(albumArtUriStr));
             currentArt = albumArtUriStr;
+            currentSong.setAlbumArtPath(albumArtUriStr);
         }
     }
 

@@ -80,10 +80,10 @@ public class AlbumActivity extends AppCompatActivity {
 
         ArrayList<String> album = (ArrayList<String>) getIntent().getSerializableExtra("ALBUM");
         if(album != null){
-            String albumId = album.get(0);
+            String artistName = album.get(0);
             String albumName = album.get(1);
             String albumArtUriStr = album.get(2).isEmpty()
-                    ? aPodRepo.retrieveArt().get(albumName)
+                    ? aPodRepo.retrieveArt().get(artistName + "_" + albumName)
                     : album.get(2);
             albumTv.setText(albumName);
 

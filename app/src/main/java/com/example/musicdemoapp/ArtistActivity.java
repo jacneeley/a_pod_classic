@@ -111,7 +111,7 @@ public class ArtistActivity extends AppCompatActivity {
         }
         else {
             //show all tracks for artist
-            recyclerView.setAdapter(new MusicListAdapter(songsList, ArtistActivity.this, "artist_actv"));
+            recyclerView.setAdapter(new MusicListAdapter(songsList, ArtistActivity.this, "show_tracks"));
         }
     }
 

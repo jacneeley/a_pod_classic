@@ -73,9 +73,10 @@ public class AlbumListAdapter extends RecyclerView.Adapter<AlbumListAdapter.Albu
     }
 
     private void setAlbumArt(AlbumListAdapter.AlbumViewHolder holder, ArrayList<String> albumInfo){
-        String albumId = albumInfo.get(0);
+        //TODO: change the array so that it stores artist + album. I forget where I set that.
+        String artistName = albumInfo.get(0);
         String albumName = albumInfo.get(1);
-        String albumArtUriStr = artMap.get(albumId) != null ? artMap.get(albumId) : artMap.get(albumName);
+        String albumArtUriStr = artMap.get(artistName+"_"+albumName);
         if(albumArtUriStr != null){
             holder.albumCoverArt.setImageURI(Uri.parse(albumArtUriStr));
             if(!albumInfo.isEmpty()){

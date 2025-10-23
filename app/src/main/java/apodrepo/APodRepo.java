@@ -25,7 +25,8 @@ public class APodRepo implements IAPodRepo{
         String[] projection = {
                 MediaStore.Audio.Albums._ID,
                 MediaStore.Audio.Albums.ALBUM_ART,
-                MediaStore.Audio.Albums.ALBUM
+                MediaStore.Audio.Albums.ALBUM,
+                MediaStore.Audio.Albums.ARTIST
         };
 
         try{
@@ -38,13 +39,12 @@ public class APodRepo implements IAPodRepo{
 
             if(cursor != null){
                 while(cursor.moveToNext()){
-                    String albumId = cursor.getString(0);
                     String path = cursor.getString(1);
                     String albumName = cursor.getString(2);
+                    String artistName = cursor.getString(3);
 
                     if(path != null){
-                        artMap.put(albumId, path);
-                        artMap.put(albumName, path);
+                        artMap.put(artistName + "_" + albumName, path);
                     }
                 }
             }
@@ -63,7 +63,12 @@ public class APodRepo implements IAPodRepo{
     @Override
     public void getAlbumArtByAlbumId(Context context, String albumId){
         try{
-            String[] projection = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART };
+            String[] projection = {
+                    MediaStore.Audio.Albums._ID,
+                    MediaStore.Audio.Albums.ALBUM_ART,
+                    MediaStore.Audio.Albums.ALBUM,
+                    MediaStore.Audio.Albums.ARTIST
+            };
 
             String where = MediaStore.Audio.Albums._ID + "=?";
 
@@ -78,8 +83,10 @@ public class APodRepo implements IAPodRepo{
             if(cursor != null){
                 while(cursor.moveToNext()){
                     String path = cursor.getString(1);
+                    String albumName = cursor.getString(2);
+                    String artist = cursor.getString(3);
                     if(path != null){
-                        artMap.put(albumId, path);
+                        artMap.put(artist + "_" + albumName, path);
                     }
                 }
             }
@@ -143,7 +150,8 @@ public class APodRepo implements IAPodRepo{
         try{
             String[] projection = {
                     MediaStore.Audio.Albums._ID,
-                    MediaStore.Audio.Albums.ALBUM
+                    MediaStore.Audio.Albums.ALBUM,
+                    MediaStore.Audio.Albums.ARTIST
             };
 
             Cursor cursor = context.getContentResolver().query(
@@ -156,9 +164,9 @@ public class APodRepo implements IAPodRepo{
 
             while(cursor.moveToNext()){
                 if(!cursor.getString(0).isEmpty()){
-                    String albumId = cursor.getString(0);
                     String albumName = cursor.getString(1);
-                    ArrayList<String> album = new ArrayList<>(Arrays.asList(albumId, albumName));
+                    String artist = cursor.getString(2);
+                    ArrayList<String> album = new ArrayList<>(Arrays.asList(artist, albumName));
                     albumsList.add(album);
                 }
             }
@@ -259,7 +267,7 @@ public class APodRepo implements IAPodRepo{
         try{
             String[] projection = {
                     MediaStore.Audio.Albums._ID,
-                    MediaStore.Audio.Albums.ALBUM
+                    MediaStore.Audio.Albums.ALBUM,
             };
 
             String where = MediaStore.Audio.Albums.ARTIST + "=?";
@@ -278,7 +286,7 @@ public class APodRepo implements IAPodRepo{
                 if(!cursor.getString(0).isEmpty()){
                     String albumId = cursor.getString(0);
                     String albumName = cursor.getString(1);
-                    ArrayList<String> album = new ArrayList<>(Arrays.asList(albumId, albumName));
+                    ArrayList<String> album = new ArrayList<>(Arrays.asList(artistName, albumName));
                     if(!albumContainer.contains(albumName)){
                         albumContainer.add(albumName);
                         albumsList.add(album);

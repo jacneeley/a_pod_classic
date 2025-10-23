@@ -91,7 +91,7 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
             super(itemView);
             titleTextView = itemView.findViewById(R.id.music_title_txt);
             iconImageView = itemView.findViewById(R.id.icon_view);
-            if(actv.equalsIgnoreCase("music_actv")) {
+            if(actv.equalsIgnoreCase("music_actv") || actv.equalsIgnoreCase("show_tracks")) {
                 iconImageView.setVisibility(View.VISIBLE);
             }
 
@@ -108,7 +108,8 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
     }
 
     private void setAlbumArt(MusicListAdapter.ViewHolder holder, AudioModel songData){
-        String albumArtUriStr = artMap.get(songData.getAlbumId());
+        String artId = songData.getArtist() + "_" + songData.getAlbum();
+        String albumArtUriStr = artMap.get(artId);
         if(albumArtUriStr != null){
             holder.iconImageView.setImageURI(Uri.parse(albumArtUriStr));
         }
