@@ -2,10 +2,17 @@ package apodrepo;
 
 import static android.content.ContentValues.TAG;
 
+import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.util.Size;
+
+import androidx.annotation.RequiresApi;
 
 import com.example.musicdemoapp.AudioModel;
 
@@ -13,8 +20,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 
 import utilities.AlbumArtMap;
+import utilities.GlobalConstants;
 
 public class APodRepo implements IAPodRepo{
     HashMap<String, String> artMap = AlbumArtMap.getArtMap();
@@ -22,37 +32,10 @@ public class APodRepo implements IAPodRepo{
 
     @Override
     public void getAllAlbumsArt(Context context) {
-        String[] projection = {
-                MediaStore.Audio.Albums._ID,
-                MediaStore.Audio.Albums.ALBUM_ART,
-                MediaStore.Audio.Albums.ALBUM,
-                MediaStore.Audio.Albums.ARTIST
-        };
-
-        try{
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    null);
-
-            if(cursor != null){
-                while(cursor.moveToNext()){
-                    String path = cursor.getString(1);
-                    String albumName = cursor.getString(2);
-                    String artistName = cursor.getString(3);
-
-                    if(path != null){
-                        artMap.put(artistName + "_" + albumName, path);
-                    }
-                }
-            }
-
-            cursor.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "getAllAlbumsArt: " + e.getMessage());
+        if(GlobalConstants.AFTERQ){
+            getAllAlbumArtAfterQ(context);
+        } else{
+            getAllAlbumArtBeforeQ(context);
         }
     }
 
@@ -262,7 +245,7 @@ public class APodRepo implements IAPodRepo{
 
     @Override
     public ArrayList<ArrayList<String>> getAlbumsByArtist(Context context, String artistName) {
-        ArrayList<String> albumContainer = new ArrayList<>();
+        HashSet<String> albumSet = new HashSet<>();
         ArrayList<ArrayList<String>> albumsList = new ArrayList<>();
         try{
             String[] projection = {
@@ -284,15 +267,16 @@ public class APodRepo implements IAPodRepo{
 
             while(cursor.moveToNext()){
                 if(!cursor.getString(0).isEmpty()){
-                    String albumId = cursor.getString(0);
+                    //String albumId = cursor.getString(0);
                     String albumName = cursor.getString(1);
-                    ArrayList<String> album = new ArrayList<>(Arrays.asList(artistName, albumName));
-                    if(!albumContainer.contains(albumName)){
-                        albumContainer.add(albumName);
-                        albumsList.add(album);
+
+                    if(!albumSet.contains(albumName)){
+                        albumSet.add(albumName);
+                        albumsList.add(new ArrayList<>(Arrays.asList(artistName, albumName)));
                     }
                 }
             }
+            albumSet = null;
             cursor.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -344,6 +328,82 @@ public class APodRepo implements IAPodRepo{
         }
 
         return songsList;
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private void getAllAlbumArtAfterQ(Context context){
+        String[] projection = {
+                MediaStore.Audio.Albums._ID,
+                MediaStore.Audio.Albums.ALBUM,
+                MediaStore.Audio.Albums.ARTIST,
+                MediaStore.Audio.Albums.ALBUM_ART
+
+        };
+
+        try{
+            Cursor cursor = context.getContentResolver().query(
+                    MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    null);
+
+            if(cursor != null){
+                try {
+                    while(cursor.moveToNext()){
+                        String artPath = cursor.getString(3);
+
+//                        String uri = ContentUris.withAppendedId(
+//                                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+//                                artPath).toString();
+                        if(artPath != null || !artPath.equalsIgnoreCase(GlobalConstants.EMPTY_STRING)){
+                            String albumName = cursor.getString(1);
+                            String artistName = cursor.getString(2);
+                            artMap.put(artistName + "_" + albumName, artPath);
+                        }
+                    }
+                } finally {
+                    cursor.close();
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void getAllAlbumArtBeforeQ(Context context){
+        String[] projection = {
+                MediaStore.Audio.Albums._ID,
+                MediaStore.Audio.Albums.ALBUM_ART,
+                MediaStore.Audio.Albums.ALBUM,
+                MediaStore.Audio.Albums.ARTIST
+        };
+
+        try{
+            Cursor cursor = context.getContentResolver().query(
+                    MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    null);
+
+            if(cursor != null){
+                try{
+                    while(cursor.moveToNext()){
+                        String path = cursor.getString(1);
+                        String albumName = cursor.getString(2);
+                        String artistName = cursor.getString(3);
+
+                        if(path != null){
+                            artMap.put(artistName + "_" + albumName, path);
+                        }
+                    }
+                } finally{ cursor.close(); }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, "getAllAlbumsArt: " + e.getMessage());
+        }
     }
 
     private void queryBuilder(String listType, ArrayList<?> arrayList, String[] projection, String whereCondition,
