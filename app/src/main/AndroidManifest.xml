@@ -19,6 +19,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MusicDemoApp">
         <activity
+            android:name=".QueueActivity"
+            android:exported="false"
+            android:label="@string/title_activity_queue"
+            android:theme="@style/Theme.MusicDemoApp" />
+        <activity
             android:name=".ArtistActivity"
             android:exported="false" />
         <activity

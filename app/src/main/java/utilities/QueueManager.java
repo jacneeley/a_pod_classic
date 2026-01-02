@@ -1,18 +1,18 @@
 package utilities;
 
+import com.example.musicdemoapp.AudioModel;
+
 import java.util.ArrayDeque;
 
 public class QueueManager {
     /* A class to manage an ArrayDeque for queueing songs. */
-    private static ArrayDeque<String> queue = new ArrayDeque<>();
+    private static final ArrayDeque<AudioModel> queue = new ArrayDeque<>();
 
-    public static ArrayDeque<String> getQueue() {
+    public static ArrayDeque<AudioModel> getQueue() {
         return queue;
     }
 
-    public static void add(String songPath){
-        queue.addLast(songPath);
-    }
+    public static void add(AudioModel songPath){ queue.addLast(songPath); }
 
     public static void pop(){
         queue.removeLast();
@@ -22,15 +22,21 @@ public class QueueManager {
         queue.removeFirst();
     }
 
-    public static void removeBy(String songPath){
-        queue.removeFirstOccurrence(songPath);
+    public static void removeBy(AudioModel song){
+        queue.removeFirstOccurrence(song);
     }
 
-    public static String getHead(){
+    public static AudioModel getHead(){
         return queue.getFirst();
     }
 
     public static void clearQueue(){
         queue.clear();
     }
+
+    public static void next() {
+        removeRecent();
+    }
+
+    public static boolean isEmpty(){ return queue.isEmpty(); }
 }

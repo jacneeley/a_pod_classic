@@ -1,6 +1,7 @@
 package com.example.musicdemoapp;
 
 import static android.content.ContentValues.TAG;
+import static android.view.View.inflate;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -9,10 +10,13 @@ import android.net.Uri;
 import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,8 +24,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import utilities.AlbumArtMap;
+import utilities.QueueManager;
 
 public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.ViewHolder>{
     private final ArrayList<AudioModel> songsList;
@@ -32,6 +38,7 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
 
     public MusicListAdapter(ArrayList<AudioModel> songsList, Context context, String actv) {
         this.songsList = songsList;
+        this.songsList.trimToSize();
         this.context = context;
         MusicListAdapter.actv = actv;
     }
@@ -59,7 +66,8 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
                 try{
                     if(MyMediaPlayer.currentIndex == -1 || MyMediaPlayer.currentIndex != position){
                         MyMediaPlayer.getInstance().reset();
-                        MyMediaPlayer.currentIndex = position;
+//                        MyMediaPlayer.currentIndex = position;
+                        MyMediaPlayer.selectedIndex = position;
                         this.intent = new Intent(context, MusicPlayerActivity.class);
                         this.intent.putExtra("LIST", songsList);
                         this.intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -71,6 +79,7 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
                         this.intent.putExtra("LIST", songsList);
                         this.intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     }
+                    this.intent.putExtra("shortClick", true);
                     this.intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     context.startActivity(this.intent);
 
@@ -78,6 +87,42 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.View
                     e.printStackTrace();
                     Log.e(TAG, "onClick: " + e.getMessage());
                 }
+            }
+        });
+
+        holder.itemView.setOnLongClickListener(new View.OnLongClickListener(){
+            @Override
+            public boolean onLongClick(View v) {
+                try{
+                    PopupMenu songOptions = new PopupMenu(context, v);
+                    songOptions.inflate(R.menu.song_options);
+                    songOptions.setOnMenuItemClickListener(item -> {
+                        AudioModel song = songsList.get(position);
+                        StringBuilder msg = new StringBuilder();
+                        switch (Objects.requireNonNull(item.getTitle()).toString()) {
+                            case "+ Queue":
+                                QueueManager.add(song);
+                                Toast.makeText(context, msg.append("song: ").append(song.getTitle()).append(" added to queue").toString(), Toast.LENGTH_SHORT).show();
+                                return true;
+                            case "Like":
+                                Toast.makeText(context, msg.append("song: ").append(song.getTitle()).append(" added to Likes").toString(), Toast.LENGTH_SHORT).show();
+                                return true;
+                            default:
+                                return true;
+
+                        }
+                    });
+                    songOptions.show();
+
+                } catch (Exception e){
+                    Log.e("Error on LongClicK: ", Objects.requireNonNull(e.getMessage()));
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onLongClickUseDefaultHapticFeedback(@NonNull View v) {
+                return View.OnLongClickListener.super.onLongClickUseDefaultHapticFeedback(v);
             }
         });
     }

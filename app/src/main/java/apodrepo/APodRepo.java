@@ -405,11 +405,4 @@ public class APodRepo implements IAPodRepo{
             Log.e(TAG, "getAllAlbumsArt: " + e.getMessage());
         }
     }
-
-    private void queryBuilder(String listType, ArrayList<?> arrayList, String[] projection, String whereCondition,
-                              String[] whereVal, String orderBy) {
-        //TODO: make a builder for cursor to reduce code in the repo class.
-    }
-
-
 }

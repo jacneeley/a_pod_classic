@@ -1,22 +1,28 @@
 package com.example.musicdemoapp;
 
+import static android.content.ContentValues.TAG;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.MediaStore;
+import android.util.Log;
+import android.util.Size;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -25,25 +31,32 @@ import androidx.core.view.WindowInsetsCompat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import utilities.AlbumArtMap;
 import utilities.AlertHandler;
+import utilities.QueueManager;
 
 public class MusicPlayerActivity extends AppCompatActivity {
-    private Context context;
     private TextView titleTv, artistTv, currentTimeTv, totalTimeTv, albumTv;
     private SeekBar seekBar;
-    private ImageView playPause, nextBtn, previousBtn, albumArt, shuffleBtn;
+    private ImageView playPause, nextBtn, previousBtn, albumArt, shuffleBtn, queueMenu;
     private ArrayList<AudioModel> songsList;
     private AudioModel currentSong;
-
+    private AudioModel last;
     private final MediaPlayer mediaPlayer = MyMediaPlayer.getInstance();
-
     private final HashMap<String, String> artMap = AlbumArtMap.getArtMap();
+    
+    //TODO: make the linkedlists members of MyMediaPlayer Class
+    private final static LinkedList<AudioModel>  mainQueue = new LinkedList<>();
+    private final static LinkedList<AudioModel> shuffleList = new LinkedList<>();
+    private final static LinkedList<AudioModel> history = new LinkedList<>();
+    private final static LinkedList<AudioModel> playing = new LinkedList<>();
     private String currentArt;
     private static boolean isShuffle = false;
+    private boolean itemClicked = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +71,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
 
         init();
 
-        setResourcesWithMusic();
+        manageSong();
 
         MusicPlayerActivity.this.runOnUiThread(new Runnable(){
             @Override
@@ -67,10 +80,17 @@ public class MusicPlayerActivity extends AppCompatActivity {
                     int prog = mediaPlayer.getCurrentPosition();
                     seekBar.setProgress(prog);
 
-                    currentTimeTv.setText(convertToMinutesAndSeconds((long) prog));
+                    currentTimeTv.setText(convertToMinutesAndSeconds(prog));
 
-                    prog = prog != 0 ? prog / 1000 : 0;
-                    int total = mediaPlayer.getDuration() / 1000;
+                    if(prog != 0){
+                        prog = prog / 1000;
+                    }
+
+                    int total = mediaPlayer.getDuration();
+                    if(total < 0){
+                        total = 0;
+                    }
+
                     String curr = MyMediaPlayer.currentlyPlaying;
                     if(mediaPlayer.isPlaying() && total == prog && curr.equals(currentSong.getTitle())) {
                         playNextSong();
@@ -91,7 +111,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
                         shuffleBtn.setImageResource(R.drawable.shuffle);
                     }
 
-                    new Handler().postDelayed(this, 100);
+                    new Handler().postDelayed(this, 50);
                 }
             }
         });
@@ -132,41 +152,60 @@ public class MusicPlayerActivity extends AppCompatActivity {
         albumArt.setSelected(true);
 
         songsList = getIntent().getSerializableExtra("LIST") != null ? (ArrayList<AudioModel>) getIntent().getSerializableExtra("LIST") : new ArrayList<>();
+        if(mainQueue.isEmpty()){
+            mainQueue.addAll(songsList);
+            updateMainQueue();
+        }
+
+        //linter will try and simplify this, but i don't want that. I want all nulls to be treated as false no matter what.
+        itemClicked = getIntent().getSerializableExtra("shortClick") == null ? false : (boolean) getIntent().getSerializableExtra("shortClick");
+
+        //queue menu
+        queueMenu = findViewById(R.id.queue_menu);
+
     }
 
-    private void setResourcesWithMusic(){
-        if(!songsList.isEmpty()){
-            currentSong = songsList.get(MyMediaPlayer.currentIndex);
+    private void manageSong(){
+        if( itemClicked ){ //bypass everything & get the song that was touched
+            if(!mainQueue.isEmpty()){
+                currentSong = songsList.get(MyMediaPlayer.selectedIndex);
+                itemClicked = false;
 
-            titleTv.setText(currentSong.getTitle());
-            artistTv.setText(currentSong.getArtist().isBlank() ? "" : currentSong.getArtist());
-            albumTv.setText(currentSong.getAlbum().isBlank() ? "" : currentSong.getAlbum());
-
-            setAlbumArt();
-            
-            totalTimeTv.setText(convertToMinutesAndSeconds(Long.parseLong(currentSong.duration)));
-
-
-            shuffleBtn.setOnClickListener(v -> isShuffleSongs());
-
-            playPause.setOnClickListener(v -> pausePlay());
-            nextBtn.setOnClickListener(v -> playNextSong());
-            previousBtn.setOnClickListener(v -> playPreviousSong());
-
-            playMusic();
-
+            }
+            else {
+                handleEmptySongList();
+            }
         }
-        else {
-            handleEmptySongList();
+        else if(!QueueManager.isEmpty()) {
+            currentSong = QueueManager.getHead();
+            QueueManager.next();
         }
+
+        else{ //fallback on mainqueue
+            currentSong = playing.get(MyMediaPlayer.currentIndex);
+        }
+        preparePlayerWithSong();
+
+        playMusic();
+
     }
 
-    @SuppressLint("DefaultLocale") //This should not cause problems as chars are not being used.
-    private static String convertToMinutesAndSeconds(long duration){
-        return String.format("%02d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(duration) % TimeUnit.HOURS.toMinutes(1),
-                TimeUnit.MILLISECONDS.toSeconds(duration) % TimeUnit.MINUTES.toSeconds(1)
-        );
+    private void preparePlayerWithSong(){
+        titleTv.setText(currentSong.getTitle());
+        artistTv.setText(currentSong.getArtist().isBlank() ? "" : currentSong.getArtist());
+        albumTv.setText(currentSong.getAlbum().isBlank() ? "" : currentSong.getAlbum());
+
+        setAlbumArt();
+
+        totalTimeTv.setText(convertToMinutesAndSeconds(Long.parseLong(currentSong.duration)));
+
+        shuffleBtn.setOnClickListener(v -> isShuffleSongs());
+
+        queueMenu.setOnClickListener(this::prepareQueueMenu);
+
+        playPause.setOnClickListener(v -> pausePlay());
+        nextBtn.setOnClickListener(v -> playNextSong());
+        previousBtn.setOnClickListener(v -> playPreviousSong());
     }
 
     private void playMusic(){
@@ -192,31 +231,52 @@ public class MusicPlayerActivity extends AppCompatActivity {
     private void playNextSong(){
         //TODO: figure out why 'Intents' break when in isShuffle mode. --This seems to be fine 09/30/25
         //TODO: figure out why mediaplayer does not update when shuffle is true.
-
-        if(isShuffle){
-            int min = 0;
-            int max = songsList.size() - 1;
-            MyMediaPlayer.currentIndex = new Random().nextInt(max - min) + min;
+        if(QueueManager.isEmpty()){
+            MyMediaPlayer.currentIndex++;
         }
 
-        else if(MyMediaPlayer.currentIndex != songsList.size() - 1){
-            MyMediaPlayer.currentIndex += 1;
-        }
+        history.add(currentSong);
 
         mediaPlayer.reset();
-        setResourcesWithMusic();
-        //null exception occurs when playNextSong plays the next song and user clicks on a new song, context is null.
-        //updateIntent();
+        manageSong();
     }
 
     private void playPreviousSong(){
-        long prog = TimeUnit.MILLISECONDS.toSeconds(mediaPlayer.getCurrentPosition());
-        if((prog) < 5 && MyMediaPlayer.currentIndex != 0){
-            MyMediaPlayer.currentIndex -= 1;
-        }
+        if(QueueManager.isEmpty()){
+            long prog = TimeUnit.MILLISECONDS.toSeconds(mediaPlayer.getCurrentPosition());
+            if(MyMediaPlayer.currentIndex != 0){
+                if((prog) < 5){
+                    MyMediaPlayer.currentIndex = MyMediaPlayer.currentIndex - 1;
+                }
 
-        mediaPlayer.reset();
-        setResourcesWithMusic();
+                mediaPlayer.reset();
+                manageSong();
+            }
+            else {
+                Toast.makeText(this, "Queue is already at the most recent.", Toast.LENGTH_SHORT).show();
+            }
+
+        }
+        else {
+            playing.clear();
+            playing.addAll(history);
+
+            if(MyMediaPlayer.currentIndex > history.size()){
+                MyMediaPlayer.currentIndex = history.size() - 1;
+            }
+            else {
+                MyMediaPlayer.currentIndex = MyMediaPlayer.currentIndex - 1;
+            }
+
+            if(MyMediaPlayer.currentIndex == history.size() && isShuffle){
+                playing.clear();
+                playing.addAll(shuffleList);
+            }
+            else if(MyMediaPlayer.currentIndex == history.size() && !isShuffle){
+                playing.clear();
+                playing.addAll(mainQueue);
+            }
+        }
     }
 
     private void pausePlay(){
@@ -232,14 +292,29 @@ public class MusicPlayerActivity extends AppCompatActivity {
         isShuffle = !isShuffle;
         if(isShuffle){
             shuffleBtn.setImageResource(R.drawable.shuffle_selected);
+            handleShuffle();
             Toast.makeText(this, "Shuffle is On", Toast.LENGTH_SHORT).show();
         }
         else{
             shuffleBtn.setImageResource(R.drawable.shuffle);
+            shuffleList.clear();
+            updateMainQueue();
+            MyMediaPlayer.currentIndex = playing.indexOf(currentSong);
+            Toast.makeText(this, "Shuffle is Off.", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void setAlbumArt(){
+//        if(GlobalConstants.AFTERQ){
+//            setAlbumArtAfterQ();
+//        }
+//        else {
+//            setAlbumArtBeforeQ();
+//        }
+        setAlbumArtBeforeQ();
+    }
+
+    private void setAlbumArtBeforeQ(){
         //set albumArt image
         String artId = currentSong.getArtist()+ "_" + currentSong.getAlbum();
         String albumArtUriStr = artMap.get(artId);
@@ -254,10 +329,202 @@ public class MusicPlayerActivity extends AppCompatActivity {
             currentSong.setAlbumArtPath(albumArtUriStr);
         }
     }
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private void setAlbumArtAfterQ(){
+        String artId = currentSong.getArtist()+ "_" + currentSong.getAlbum();
+        String mediaUriStr = artMap.get(artId);
+        if(!mediaUriStr.equalsIgnoreCase(currentArt)){
+            try {
+                Bitmap thumbnail = getContentResolver().loadThumbnail(
+                        Uri.parse(mediaUriStr),
+                        new Size(300, 300),
+                        null
+                );
+                albumArt.setImageBitmap(thumbnail);
+                currentArt = mediaUriStr;
+                currentSong.setAlbumArtPath(mediaUriStr);
+            } catch (IOException e){
+                Log.i(TAG, "setAlbumArtAfterQ: Could not find album art...\nUsing placeholder.");
+                albumArt.setImageResource(R.drawable.placeholder);
+                currentArt = "";
+                currentSong.setAlbumArtPath("");
+            }
+        }
+    }
+
+    private void prepareQueueMenu(View v){
+        try{
+            PopupMenu queueMenu = new PopupMenu(this, v);
+
+            Menu menu = queueMenu.getMenu();
+            menu.clear();
+
+            HashMap<Integer, AudioModel> queueMap;
+
+            if(QueueManager.isEmpty()){
+                queueMap = null;
+                menu.add(0, -1, Menu.NONE,"Queue is Empty" );
+
+            } else {
+                queueMap = new HashMap<>();
+                var queue = QueueManager.getQueue();
+
+                int itemId = 0;
+                MenuItem clearItem = menu.add(0, itemId, Menu.NONE, "CLEAR");
+
+                clearItem.setOnMenuItemClickListener(v1 -> {
+                QueueManager.clearQueue();
+
+                Toast.makeText(this, "Queue has been cleared.", Toast.LENGTH_SHORT).show();
+
+                queueMenu.dismiss();
+                prepareQueueMenu(v);
+                    return true;
+                });
+
+                itemId++;
+                MenuItem editItem = menu.add(0, itemId, Menu.NONE, "EDIT");
+
+                editItem.setOnMenuItemClickListener(v2 -> {
+                    Toast.makeText(this, "edit queue clicked.", Toast.LENGTH_SHORT).show(); //temp
+                    return true;
+                });
+
+                for(var q : queue){
+                    itemId++;
+                    MenuItem menuItem = menu.add(0, itemId, Menu.NONE, q.title);
+                    queueMap.put(itemId, q);
+                    menuItem.setOnMenuItemClickListener(v3 -> {
+                        currentSong = q;
+                        mediaPlayer.reset();
+                        preparePlayerWithSong();
+                        playMusic();
+                        queueMenu.dismiss();
+                        Toast.makeText(this, "Bypassing queue.", Toast.LENGTH_SHORT).show();
+                        return true;
+                    });
+                }
+            }
+
+            //handle empty queue
+            queueMenu.setOnMenuItemClickListener(v4 -> true);
+
+            queueMenu.show();
+
+        } catch (Exception e) {
+//            e.printStackTrace();
+            Log.e(TAG, "prepareQueueMenu error: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    ///////////////////////
+    /// HELPER METHODS ///
+    /////////////////////
+
+    /**
+     * convert long duration to string.
+     * @param duration the duration in milliseconds represented as a long
+     * @return MM:SS as string
+     */
+    @SuppressLint("DefaultLocale") //This should not cause problems as chars are not being used.
+    private static String convertToMinutesAndSeconds(long duration){
+        return String.format("%02d:%02d",
+                TimeUnit.MILLISECONDS.toMinutes(duration) % TimeUnit.HOURS.toMinutes(1),
+                TimeUnit.MILLISECONDS.toSeconds(duration) % TimeUnit.MINUTES.toSeconds(1)
+        );
+    }
+
+    /**
+     * maintain history for playPreviousSong() using a Double LinkedList for easy traversal.
+     */
+    private void handleHistory(){
+        MyMediaPlayer.currentIndex -= 1;
+        if(last == null){
+            currentSong = history.peekLast();
+            last = history.peekLast();
+
+            preparePlayerWithSong();
+
+            playMusic();
+        }
+
+        else {
+            int idxLast = history.lastIndexOf(last);
+            if(idxLast - 1 >= 0){
+                currentSong = history.get(idxLast - 1);
+
+                preparePlayerWithSong();
+
+                playMusic();
+            }
+            else {
+                Toast.makeText(this, "Queue is already at the most recent.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    /**
+     * shuffle songsList and update queue with shuffledList
+     */
+    private void handleShuffle(){
+        ArrayList<AudioModel> tmpShuffleList = shuffleAlgo(songsList);
+        tmpShuffleList.trimToSize();
+
+        if(!tmpShuffleList.isEmpty()) {
+            shuffleList.clear();
+            shuffleList.addAll(tmpShuffleList);
+            playing.clear();
+            playing.addAll(shuffleList);
+            MyMediaPlayer.currentIndex = -1;
+        }
+        tmpShuffleList = null;
+    }
+
+    /**
+     * Randomize songsList in place using Fisher-Yates algorithm.
+     * This algorithm has an efficient time complexity for objects of size 10^8, worst case 10^6.
+     * Time Complexity: O(n) amortized.
+     * @param list arraylist of AudioModels
+     * @return list the shuffled list
+     */
+    private ArrayList<AudioModel> shuffleAlgo(ArrayList<AudioModel> list){
+        try{
+            list.trimToSize();
+
+            int n = list.size();
+            Random r = new Random();
+
+            //start from the end and swap one-by-one
+            //skip the first element
+            for(int i = n - 1; i > 0; i--){
+                //random index for shuffling
+                int j = r.nextInt(i + 1);
+
+                //swap objects at index
+                AudioModel temp = list.get(i);
+                list.remove(i);
+                list.add(i, list.get(j));
+                list.remove(j);
+                list.add(j, temp);
+            }
+
+            return list;
+
+        } catch (Exception e) {
+            Log.e(TAG, "shuffleAlgo: Failed to shuffle - " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void updateMainQueue(){
+        playing.clear();
+        playing.addAll(mainQueue);
+    }
 
     private void handleEmptySongList(){
         AlertDialog.Builder builder = AlertHandler.okAlert(MusicPlayerActivity.this, "Alert:", "ERROR: Track could not be found...");
-        builder.setPositiveButton("OK", (DialogInterface.OnClickListener) (dialog, which) -> {
+        builder.setPositiveButton("OK", (dialog, which) -> {
             //go back
             Intent intent = new Intent(MusicPlayerActivity.this, MainActivity.class);
             startActivity(intent);
@@ -266,34 +533,4 @@ public class MusicPlayerActivity extends AppCompatActivity {
         AlertDialog alert = builder.create();
         alert.show();
     }
-
-    //TODO: delete this later but leave it for now
-//    private void getAlbumArtByAlbumId(){
-//        String albumId = currentSong.getAlbumId();
-//
-//        String[] projection = { MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART };
-//
-//        String where = MediaStore.Audio.Albums._ID + "=?";
-//
-//        Cursor cursor = getContentResolver().query(
-//                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-//                projection,
-//                where,
-//                new String[] { albumId },
-//                null
-//        );
-//
-//        if(cursor != null & cursor.moveToFirst()){
-//            String path = cursor.getString(1);
-//            if(path != null){
-//                albumArt.setImageURI(Uri.parse(path));
-//                artMap.put(albumId, path);
-//            }
-//            else {
-//                albumArt.setImageResource(R.drawable.placeholder);
-//            }
-//        }
-//
-//        cursor.close();
-//    }
 }
