@@ -152,7 +152,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         albumArt.setSelected(true);
 
         songsList = getIntent().getSerializableExtra("LIST") != null ? (ArrayList<AudioModel>) getIntent().getSerializableExtra("LIST") : new ArrayList<>();
-        if(mainQueue.isEmpty()){
+        if(mainQueue.isEmpty() && !songsList.isEmpty()){
             mainQueue.addAll(songsList);
             updateMainQueue();
         }
@@ -169,6 +169,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         if( itemClicked ){ //bypass everything & get the song that was touched
             if(!mainQueue.isEmpty()){
                 currentSong = songsList.get(MyMediaPlayer.selectedIndex);
+                MyMediaPlayer.currentIndex = playing.indexOf(currentSong);
                 itemClicked = false;
 
             }
@@ -272,7 +273,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 playing.clear();
                 playing.addAll(shuffleList);
             }
-            else if(MyMediaPlayer.currentIndex == history.size() && !isShuffle){
+            else if(MyMediaPlayer.currentIndex == history.size()){
                 playing.clear();
                 playing.addAll(mainQueue);
             }
