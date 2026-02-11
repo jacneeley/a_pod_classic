@@ -44,294 +44,287 @@ public class APodRepo implements IAPodRepo{
     }
 
     @Override
-    public void getAlbumArtByAlbumId(Context context, String albumId){
-        try{
-            String[] projection = {
-                    MediaStore.Audio.Albums._ID,
-                    MediaStore.Audio.Albums.ALBUM_ART,
-                    MediaStore.Audio.Albums.ALBUM,
-                    MediaStore.Audio.Albums.ARTIST
-            };
+    public void getAlbumArtByAlbumId(Context context, String albumId) throws NullPointerException {
+        String[] projection = {
+                MediaStore.Audio.Albums._ID,
+                MediaStore.Audio.Albums.ALBUM_ART,
+                MediaStore.Audio.Albums.ALBUM,
+                MediaStore.Audio.Albums.ARTIST
+        };
 
-            String where = MediaStore.Audio.Albums._ID + "=?";
+        String where = MediaStore.Audio.Albums._ID + "=?";
 
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    projection,
-                    where,
-                    new String[] { albumId },
-                    null
-            );
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                projection,
+                where,
+                new String[]{albumId},
+                null
+        );
 
-            if(cursor != null){
-                while(cursor.moveToNext()){
+        if (cursor != null) {
+            try {
+                while (cursor.moveToNext()) {
                     String path = cursor.getString(1);
                     String albumName = cursor.getString(2);
                     String artist = cursor.getString(3);
-                    if(path != null){
+                    if (path != null) {
                         artMap.put(artist + "_" + albumName, path);
                     }
                 }
             }
-
-            cursor.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "getAlbumArtByAlbumId: " + e.getMessage());
+            finally { cursor.close(); }
         }
     }
 
     @Override
-    public ArrayList<AudioModel> getAllMusic(Context context) {
+    public ArrayList<AudioModel> getAllMusic(Context context) throws NullPointerException {
         ArrayList<AudioModel> songsList = new ArrayList<>();
-        try{
-            String[] projection = {
-                    MediaStore.Audio.Media.DATA,
-                    MediaStore.Audio.Media.TITLE,
-                    MediaStore.Audio.Media.ARTIST,
-                    MediaStore.Audio.Media.ALBUM,
-                    MediaStore.Audio.Media.DURATION,
-                    MediaStore.Audio.Media.ALBUM_ID
-            };
 
-            //access tracks
-            String selection = MediaStore.Audio.Media.IS_MUSIC + " !=0";
+        String[] projection = {
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.ALBUM_ID
+        };
 
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    selection,
-                    null,
-                    MediaStore.Audio.Media.TITLE + " ASC");
+        //access tracks
+        String selection = MediaStore.Audio.Media.IS_MUSIC + " !=0";
 
-            while(cursor.moveToNext()){
-                String path = cursor.getString(0);
-                String title = cursor.getString(1);
-                String artist = cursor.getString(2);
-                String album = cursor.getString(3);
-                String duration = cursor.getString(4);
-                String albumId = cursor.getString(5);
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                selection,
+                null,
+                MediaStore.Audio.Media.TITLE + " ASC");
 
-                if (new File(path).exists()) {
-                    songsList.add(new AudioModel(path, title, artist, album, albumId, duration));
+        if(cursor != null){
+            try{
+                while(cursor.moveToNext()){
+                    String path = cursor.getString(0);
+                    String title = cursor.getString(1);
+                    String artist = cursor.getString(2);
+                    String album = cursor.getString(3);
+                    String duration = cursor.getString(4);
+                    String albumId = cursor.getString(5);
+
+                    if (new File(path).exists()) {
+                        songsList.add(new AudioModel(path, title, artist, album, albumId, duration));
+                    }
                 }
             }
-
-            cursor.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "getAllMusic: " + e.getMessage());
+            finally { cursor.close(); }
         }
 
+        songsList.trimToSize();
         return songsList;
     }
 
     @Override
-    public ArrayList<ArrayList<String>> getAllAlbums(Context context) {
+    public ArrayList<ArrayList<String>> getAllAlbums(Context context) throws NullPointerException {
         ArrayList<ArrayList<String>> albumsList = new ArrayList<>();
-        try{
-            String[] projection = {
-                    MediaStore.Audio.Albums._ID,
-                    MediaStore.Audio.Albums.ALBUM,
-                    MediaStore.Audio.Albums.ARTIST
-            };
 
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    MediaStore.Audio.Albums.ALBUM + " ASC"
-            );
+        String[] projection = {
+                MediaStore.Audio.Albums._ID,
+                MediaStore.Audio.Albums.ALBUM,
+                MediaStore.Audio.Albums.ARTIST
+        };
 
-            while(cursor.moveToNext()){
-                if(!cursor.getString(0).isEmpty()){
-                    String albumName = cursor.getString(1);
-                    String artist = cursor.getString(2);
-                    ArrayList<String> album = new ArrayList<>(Arrays.asList(artist, albumName));
-                    albumsList.add(album);
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                MediaStore.Audio.Albums.ALBUM + " ASC"
+        );
+
+        if(cursor != null) {
+            try {
+                while(cursor.moveToNext()){
+                    if(!cursor.getString(0).isEmpty()){
+                        String albumName = cursor.getString(1);
+                        String artist = cursor.getString(2);
+                        ArrayList<String> album = new ArrayList<>(Arrays.asList(artist, albumName));
+                        albumsList.add(album);
+                    }
                 }
-            }
-
-            cursor.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "getAllAlbums: " + e.getMessage());
+            } finally { cursor.close(); }
         }
 
+        albumsList.trimToSize();
         return albumsList;
     }
 
     @Override
-    public ArrayList<String> getAllArtists(Context context) {
+    public ArrayList<String> getAllArtists(Context context) throws NullPointerException {
         ArrayList<String> artistList = new ArrayList<>();
-        try{
-            String[] projection = {
-                    MediaStore.Audio.Artists._ID,
-                    MediaStore.Audio.Artists.ARTIST
-            };
 
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    MediaStore.Audio.Artists.ARTIST + " ASC"
-            );
+        String[] projection = {
+                MediaStore.Audio.Artists._ID,
+                MediaStore.Audio.Artists.ARTIST
+        };
 
-            while(cursor.moveToNext()){
-                if(!cursor.getString(0).isEmpty()){
-                    String artist = cursor.getString(1);
-                    artistList.add(artist);
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                MediaStore.Audio.Artists.ARTIST + " ASC"
+        );
+        if(cursor != null){
+            try{
+                while(cursor.moveToNext()){
+                    if(!cursor.getString(0).isEmpty()){
+                        String artist = cursor.getString(1);
+                        artistList.add(artist);
+                    }
                 }
-            }
-
-            cursor.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "getAllArtists: " + e.getMessage());
+            } finally { cursor.close(); }
         }
 
+        artistList.trimToSize();
         return artistList;
     }
 
     @Override
-    public ArrayList<AudioModel> getSongsByAlbumName(Context context, String albumName) {
+    public ArrayList<AudioModel> getSongsByAlbumName(Context context, String albumName) throws NullPointerException {
         ArrayList<AudioModel> songsList = new ArrayList<>();
-        try{
-            String[] projection = {
-                    MediaStore.Audio.Media.DATA,
-                    MediaStore.Audio.Media.TITLE,
-                    MediaStore.Audio.Media.ARTIST,
-                    MediaStore.Audio.Media.ALBUM,
-                    MediaStore.Audio.Media.DURATION,
-                    MediaStore.Audio.Media.ALBUM_ID
-            };
 
-            String where = MediaStore.Audio.Media.ALBUM + "=?";
-            String[] whereVal = { albumName };
-            String orderBy = MediaStore.Audio.Media.TRACK;
+        String[] projection = {
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.ALBUM_ID
+        };
 
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    where,
-                    whereVal,
-                    orderBy
-            );
+        String where = MediaStore.Audio.Media.ALBUM + "=?";
+        String[] whereVal = { albumName };
+        String orderBy = MediaStore.Audio.Media.TRACK;
 
-            while(cursor.moveToNext()){
-                String path = cursor.getString(0);
-                String title = cursor.getString(1);
-                String artist = cursor.getString(2);
-                String album = cursor.getString(3);
-                String duration = cursor.getString(4);
-                String albumId = cursor.getString(5);
-                if (new File(path).exists()) {
-                    songsList.add(new AudioModel(path, title, artist, album, albumId, duration));
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                where,
+                whereVal,
+                orderBy
+        );
+
+        if(cursor != null){
+            try {
+                while (cursor.moveToNext()) {
+                    String path = cursor.getString(0);
+                    String title = cursor.getString(1);
+                    String artist = cursor.getString(2);
+                    String album = cursor.getString(3);
+                    String duration = cursor.getString(4);
+                    String albumId = cursor.getString(5);
+                    if (new File(path).exists()) {
+                        songsList.add(new AudioModel(path, title, artist, album, albumId, duration));
+                    }
                 }
             }
-            cursor.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "getSongsByAlbumName: " + e.getMessage());
+            finally {cursor.close();}
         }
 
+        songsList.trimToSize();
         return songsList;
     }
 
     @Override
-    public ArrayList<ArrayList<String>> getAlbumsByArtist(Context context, String artistName) {
+    public ArrayList<ArrayList<String>> getAlbumsByArtist(Context context, String artistName) throws NullPointerException {
         HashSet<String> albumSet = new HashSet<>();
         ArrayList<ArrayList<String>> albumsList = new ArrayList<>();
-        try{
-            String[] projection = {
-                    MediaStore.Audio.Albums._ID,
-                    MediaStore.Audio.Albums.ALBUM,
-            };
 
-            String where = MediaStore.Audio.Albums.ARTIST + "=?";
-            String[] whereVal = { artistName };
-            String sortOrder = MediaStore.Audio.Media.ALBUM + " ASC";
+        String[] projection = {
+                MediaStore.Audio.Albums._ID,
+                MediaStore.Audio.Albums.ALBUM,
+        };
 
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    where,
-                    whereVal,
-                    sortOrder
-            );
+        String where = MediaStore.Audio.Albums.ARTIST + "=?";
+        String[] whereVal = { artistName };
+        String sortOrder = MediaStore.Audio.Media.ALBUM + " ASC";
 
-            while(cursor.moveToNext()){
-                if(!cursor.getString(0).isEmpty()){
-                    //String albumId = cursor.getString(0);
-                    String albumName = cursor.getString(1);
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                where,
+                whereVal,
+                sortOrder
+        );
+        if(cursor != null ){
+            try {
+                while(cursor.moveToNext()){
+                    if(!cursor.getString(0).isEmpty()){
+                        //String albumId = cursor.getString(0);
+                        String albumName = cursor.getString(1);
 
-                    if(!albumSet.contains(albumName)){
-                        albumSet.add(albumName);
-                        albumsList.add(new ArrayList<>(Arrays.asList(artistName, albumName)));
+                        if(!albumSet.contains(albumName)){
+                            albumSet.add(albumName);
+                            albumsList.add(new ArrayList<>(Arrays.asList(artistName, albumName)));
+                        }
                     }
                 }
             }
-            albumSet = null;
-            cursor.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "getAlbumsByArtist: " + e.getMessage());
+            finally { cursor.close(); }
         }
+        albumSet.clear();
+
+        albumsList.trimToSize();
         return albumsList;
     }
 
     @Override
-    public ArrayList<AudioModel> getSongsByArtistName(Context context , String artistName){
+    public ArrayList<AudioModel> getSongsByArtistName(Context context , String artistName) throws NullPointerException {
         ArrayList<AudioModel> songsList = new ArrayList<AudioModel>();
-        try{
-            String[] projection = {
-                    MediaStore.Audio.Media.DATA,
-                    MediaStore.Audio.Media.TITLE,
-                    MediaStore.Audio.Media.ARTIST,
-                    MediaStore.Audio.Media.ALBUM,
-                    MediaStore.Audio.Media.DURATION,
-                    MediaStore.Audio.Media.ALBUM_ID
-            };
 
-            String where = MediaStore.Audio.Media.ARTIST + "=?";
-            String[] whereVal = { artistName };
-            String orderBy = MediaStore.Audio.Media.ALBUM + " ASC";
+        String[] projection = {
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.ALBUM_ID
+        };
 
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    where,
-                    whereVal,
-                    orderBy
-            );
+        String where = MediaStore.Audio.Media.ARTIST + "=?";
+        String[] whereVal = { artistName };
+        String orderBy = MediaStore.Audio.Media.ALBUM + " ASC";
 
-            while(cursor.moveToNext()){
-                String path = cursor.getString(0);
-                String title = cursor.getString(1);
-                String artist = cursor.getString(2);
-                String album = cursor.getString(3);
-                String duration = cursor.getString(4);
-                String albumId = cursor.getString(5);
-                if (new File(path).exists()) {
-                    songsList.add(new AudioModel(path, title, artist, album, albumId, duration));
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                where,
+                whereVal,
+                orderBy
+        );
+
+        if(cursor != null){
+            try {
+                while(cursor.moveToNext()){
+                    String path = cursor.getString(0);
+                    String title = cursor.getString(1);
+                    String artist = cursor.getString(2);
+                    String album = cursor.getString(3);
+                    String duration = cursor.getString(4);
+                    String albumId = cursor.getString(5);
+                    if (new File(path).exists()) {
+                        songsList.add(new AudioModel(path, title, artist, album, albumId, duration));
+                    }
                 }
             }
-            cursor.close();
-        }catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "getSongsByAlbumName: " + e.getMessage());
+            finally { cursor.close(); }
         }
 
+        songsList.trimToSize();
         return songsList;
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    private void getAllAlbumArtAfterQ(Context context){
+    private void getAllAlbumArtAfterQ(Context context) throws NullPointerException {
         String[] projection = {
                 MediaStore.Audio.Albums._ID,
                 MediaStore.Audio.Albums.ALBUM,
@@ -340,38 +333,34 @@ public class APodRepo implements IAPodRepo{
 
         };
 
-        try{
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    null);
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                null);
 
-            if(cursor != null){
-                try {
-                    while(cursor.moveToNext()){
-                        String artPath = cursor.getString(3);
+        if(cursor != null){
+            try {
+                while(cursor.moveToNext()){
+                    String artPath = cursor.getString(3);
 
 //                        String uri = ContentUris.withAppendedId(
 //                                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
 //                                artPath).toString();
-                        if(artPath != null || !artPath.equalsIgnoreCase(GlobalConstants.EMPTY_STRING)){
-                            String albumName = cursor.getString(1);
-                            String artistName = cursor.getString(2);
-                            artMap.put(artistName + "_" + albumName, artPath);
-                        }
+                    if(artPath != null || !artPath.equalsIgnoreCase(GlobalConstants.EMPTY_STRING)){
+                        String albumName = cursor.getString(1);
+                        String artistName = cursor.getString(2);
+                        artMap.put(artistName + "_" + albumName, artPath);
                     }
-                } finally {
-                    cursor.close();
                 }
+            } finally {
+                cursor.close();
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
-    private void getAllAlbumArtBeforeQ(Context context){
+    private void getAllAlbumArtBeforeQ(Context context) throws NullPointerException {
         String[] projection = {
                 MediaStore.Audio.Albums._ID,
                 MediaStore.Audio.Albums.ALBUM_ART,
@@ -379,30 +368,25 @@ public class APodRepo implements IAPodRepo{
                 MediaStore.Audio.Albums.ARTIST
         };
 
-        try{
-            Cursor cursor = context.getContentResolver().query(
-                    MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    null);
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                null);
 
-            if(cursor != null){
-                try{
-                    while(cursor.moveToNext()){
-                        String path = cursor.getString(1);
-                        String albumName = cursor.getString(2);
-                        String artistName = cursor.getString(3);
+        if(cursor != null){
+            try{
+                while(cursor.moveToNext()){
+                    String path = cursor.getString(1);
+                    String albumName = cursor.getString(2);
+                    String artistName = cursor.getString(3);
 
-                        if(path != null){
-                            artMap.put(artistName + "_" + albumName, path);
-                        }
+                    if(path != null){
+                        artMap.put(artistName + "_" + albumName, path);
                     }
-                } finally{ cursor.close(); }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "getAllAlbumsArt: " + e.getMessage());
+                }
+            } finally{ cursor.close(); }
         }
     }
 }
