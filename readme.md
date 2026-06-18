@@ -20,3 +20,5 @@ My plan is to hopefully have a public apk ready for side loading by the end of t
 ## 2026 Update
 
 This project is on hold for now. Thanks for checking it out. I hope to return to it eventually but being a full time dev on top of working on side projects gets hard ya know?
+
+![Issue #16](https://github.com/jacneeley/a_pod_classic/issues/16)
